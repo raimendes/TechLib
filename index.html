@@ -1921,6 +1921,67 @@
       margin-top: 10px;
     }
 
+
+    .verification-wait-card {
+      margin-top: 8px;
+      padding: 20px 16px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .verification-wait-icon {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 12px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      color: var(--text);
+      font-size: 1.4rem;
+      font-weight: 900;
+    }
+
+    .verification-wait-card h3 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .verification-wait-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.55;
+    }
+
+    .verification-wait-email {
+      display: inline-block;
+      margin-top: 9px;
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--text);
+      font-size: 0.72rem;
+      font-weight: 800;
+      word-break: break-all;
+    }
+
+    .verification-wait-actions {
+      display: grid;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .verification-wait-note {
+      margin-top: 14px !important;
+      font-size: 0.69rem !important;
+    }
+
 </style>
 </head>
 <body>
@@ -4207,6 +4268,46 @@ function renderPendingEmailChange() {
   `;
 }
 
+
+function renderEmailVerificationWait() {
+  return `
+    <article class="verification-wait-card">
+      <div class="verification-wait-icon">@</div>
+      <h3>Aguardando confirmação do e-mail</h3>
+      <p>
+        Sua conta foi criada, mas o acesso às funções do TechLib só será liberado
+        depois que o e-mail institucional for confirmado.
+      </p>
+
+      <span class="verification-wait-email">
+        ${escapeHtml(state.currentUser?.email || state.authUser?.email || "")}
+      </span>
+
+      <div class="verification-wait-actions">
+        <button class="primary-button" type="button" onclick="confirmEmailVerification()">
+          Já confirmei meu e-mail
+        </button>
+
+        <button class="secondary-button" type="button" onclick="resendVerification()">
+          Reenviar confirmação
+        </button>
+
+        <button class="secondary-button" type="button" onclick="simulatePasswordReset()">
+          Alterar ou recuperar senha
+        </button>
+
+        <button class="danger-button" type="button" onclick="logout()">
+          Sair da conta
+        </button>
+      </div>
+
+      <p class="verification-wait-note">
+        Enquanto a confirmação estiver pendente, empréstimos, reservas e funções de gestão permanecem bloqueados.
+      </p>
+    </article>
+  `;
+}
+
 function renderProfile() {
   if (!firebaseConfigured && !LOCAL_MODE) {
     elements.profileContent.innerHTML = `
@@ -4246,6 +4347,11 @@ function renderProfile() {
       </div>
       <button class="danger-button" style="margin-top:14px;" onclick="logout()">Sair da conta</button>
     `;
+    return;
+  }
+
+  if (!isVerifiedUser()) {
+    elements.profileContent.innerHTML = renderEmailVerificationWait();
     return;
   }
 
@@ -4356,6 +4462,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Contas com e-mail ainda não confirmado agora entram em uma tela exclusiva de aguardando validação.</li>
+        <li>Enquanto o e-mail estiver pendente, Empréstimos, Reservas e Gestão ficam ocultos e bloqueados.</li>
         <li>Adicionada edição dos dados da conta no Perfil, permitindo alterar o nome e solicitar troca do e-mail institucional.</li>
         <li>A troca de e-mail exige confirmação do novo endereço e preserva o mesmo usuário, histórico e permissões.</li>
         <li>Removidos os usuários e atalhos de teste da versão de produção.</li>
@@ -4987,7 +5095,8 @@ function setView(viewName) {
 
 function updateAccessState() {
   const logged = Boolean(state.currentUser);
-  const movementAccess = logged && isActiveUser() && (isStudentUser() || isProfessorUser());
+  const verifiedAccess = logged && isActiveUser() && isVerifiedUser();
+  const movementAccess = verifiedAccess && (isStudentUser() || isProfessorUser());
 
   elements.headerAccessButton.textContent = logged ? "Perfil" : "Entrar";
   elements.loansNavButton.classList.toggle("hidden", !movementAccess);
@@ -4999,6 +5108,10 @@ function updateAccessState() {
 
   if (!movementAccess && state.currentView === "loans") setView(logged ? "profile" : "home");
   if (!canOperateLibrary() && state.currentView === "management") setView(logged ? "profile" : "home");
+
+  if (logged && !isVerifiedUser() && ["loans", "management"].includes(state.currentView)) {
+    setView("profile");
+  }
 }
 
 function applyTheme(theme) {
@@ -6412,6 +6525,7 @@ window.confirmEmailVerification = async function() {
     setFirebaseStatus("E-mail confirmado. Acesso ao TechLib liberado.", "ready");
     updateAccessState();
     renderAll();
+    setView("profile");
 
     alert("E-mail confirmado. Seu acesso ao TechLib foi liberado.");
   } catch (error) {
