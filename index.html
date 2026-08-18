@@ -1842,6 +1842,85 @@
       font-weight: 750;
     }
 
+
+    .profile-edit-card {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+
+    .profile-edit-card h3 {
+      margin: 0 0 5px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .profile-edit-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .profile-edit-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .profile-edit-grid label {
+      display: grid;
+      gap: 6px;
+      color: var(--text);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .profile-edit-grid input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-soft);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .profile-edit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .pending-email-card {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-soft);
+    }
+
+    .pending-email-card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: 0.78rem;
+    }
+
+    .pending-email-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.45;
+    }
+
+    .pending-email-card button {
+      margin-top: 10px;
+    }
+
 </style>
 </head>
 <body>
@@ -2079,7 +2158,9 @@ import {
   signOut,
   onAuthStateChanged,
   reload,
-  getIdToken
+  getIdToken,
+  updateProfile,
+  verifyBeforeUpdateEmail
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import {
   getFirestore,
@@ -2191,6 +2272,7 @@ const state = {
   bookImportFileName: "",
   bookImportBusy: false,
   bookImportMessage: "",
+  profileEditOpen: false,
   eventsLoaded: false,
   tavolaLoaded: false,
   lastAccessSignature: "",
@@ -3997,6 +4079,134 @@ function renderTavola() {
   elements.tavolaContent.innerHTML = `${toolbar}${form}${records}`;
 }
 
+
+function getAccountDomainForUser(user = state.currentUser) {
+  return user?.baseRole === "Professor"
+    ? ROLE_DOMAINS.Professor
+    : ROLE_DOMAINS.Aluno;
+}
+
+function isValidInstitutionalEmailForUser(email, user = state.currentUser) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const domain = getAccountDomainForUser(user);
+  return Boolean(
+    normalizedEmail &&
+    normalizedEmail.endsWith(`@${domain}`) &&
+    normalizedEmail.split("@").length === 2
+  );
+}
+
+function getPendingAccountEmail() {
+  return sessionStorage.getItem("techlibPendingAccountEmail") || "";
+}
+
+function setPendingAccountEmail(email = "") {
+  if (email) {
+    sessionStorage.setItem("techlibPendingAccountEmail", email);
+  } else {
+    sessionStorage.removeItem("techlibPendingAccountEmail");
+  }
+}
+
+async function syncAuthenticatedEmailToProfile(firebaseUser = auth?.currentUser) {
+  if (
+    LOCAL_MODE ||
+    !firebaseUser ||
+    !db ||
+    !firebaseUser.email ||
+    !firebaseUser.emailVerified
+  ) return false;
+
+  const authEmail = String(firebaseUser.email).trim().toLowerCase();
+  const profileEmail = String(state.currentUser?.email || "").trim().toLowerCase();
+
+  if (!authEmail || authEmail === profileEmail) {
+    if (getPendingAccountEmail() === authEmail) setPendingAccountEmail("");
+    return false;
+  }
+
+  await getIdToken(firebaseUser, true);
+
+  await updateDoc(doc(db, "users", firebaseUser.uid), {
+    email: authEmail,
+    updatedAt: serverTimestamp()
+  });
+
+  setPendingAccountEmail("");
+  return true;
+}
+
+function renderProfileEditCard() {
+  if (!state.profileEditOpen) return "";
+
+  const expectedDomain = getAccountDomainForUser();
+  const currentEmail = state.authUser?.email || state.currentUser?.email || "";
+
+  return `
+    <article class="profile-edit-card">
+      <h3>Editar dados da conta</h3>
+      <p>
+        O nome pode ser alterado imediatamente. Para trocar o e-mail, use outro endereço
+        institucional do mesmo tipo de perfil. A alteração do e-mail só será concluída
+        depois da confirmação enviada ao novo endereço.
+      </p>
+
+      <form onsubmit="saveAccountProfile(event)">
+        <div class="profile-edit-grid">
+          <label>
+            Nome completo
+            <input
+              name="accountName"
+              maxlength="120"
+              required
+              value="${escapeHtml(state.currentUser?.name || "")}"
+            >
+          </label>
+
+          <label>
+            E-mail institucional
+            <input
+              name="accountEmail"
+              type="email"
+              maxlength="180"
+              required
+              value="${escapeHtml(currentEmail)}"
+              placeholder="usuario@${escapeHtml(expectedDomain)}"
+            >
+          </label>
+        </div>
+
+        <p style="margin-top:10px;">
+          Para esta conta, o novo e-mail deve terminar em <strong>@${escapeHtml(expectedDomain)}</strong>.
+        </p>
+
+        <div class="profile-edit-actions">
+          <button class="primary-button" type="submit">Salvar alterações</button>
+          <button class="secondary-button" type="button" onclick="closeProfileEdit()">Cancelar</button>
+        </div>
+      </form>
+    </article>
+  `;
+}
+
+function renderPendingEmailChange() {
+  const pendingEmail = getPendingAccountEmail();
+  if (!pendingEmail) return "";
+
+  return `
+    <div class="pending-email-card">
+      <strong>Alteração de e-mail aguardando confirmação</strong>
+      <span>
+        Enviamos a confirmação para ${escapeHtml(pendingEmail)}.
+        Depois de confirmar o novo endereço, volte ao TechLib e atualize a validação.
+      </span>
+      <button class="secondary-button" type="button" onclick="confirmNewAccountEmail()">
+        Já confirmei o novo e-mail
+      </button>
+    </div>
+  `;
+}
+
 function renderProfile() {
   if (!firebaseConfigured && !LOCAL_MODE) {
     elements.profileContent.innerHTML = `
@@ -4118,6 +4328,15 @@ function renderProfile() {
         </button>
       ` : ""}
 
+      <button class="option-card" onclick="openProfileEdit()">
+        <span class="option-icon">✎</span>
+        <span>
+          <strong>Editar dados da conta</strong>
+          <span>Alterar nome ou solicitar troca do e-mail institucional.</span>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+
       <button class="option-card" onclick="simulatePasswordReset()">
         <span class="option-icon">⌘</span>
         <span>
@@ -4130,10 +4349,15 @@ function renderProfile() {
       <button class="danger-button" style="margin-top:4px;" onclick="logout()">Sair da conta</button>
     </div>
 
+    ${renderPendingEmailChange()}
+    ${renderProfileEditCard()}
+
     <article class="updates-card">
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Adicionada edição dos dados da conta no Perfil, permitindo alterar o nome e solicitar troca do e-mail institucional.</li>
+        <li>A troca de e-mail exige confirmação do novo endereço e preserva o mesmo usuário, histórico e permissões.</li>
         <li>Removidos os usuários e atalhos de teste da versão de produção.</li>
         <li>Administrador agora pode usar “Visualizar como” para conferir as experiências de Administrador, Bibliotecário, Professor e Aluno sem alterar o perfil real.</li>
         <li>O modo “Visualizar como” agora também restringe os controles administrativos exibidos conforme o perfil selecionado.</li>
@@ -4865,6 +5089,8 @@ function mapFirebaseError(error) {
     "auth/weak-password": "A senha deve possuir pelo menos seis caracteres.",
     "auth/too-many-requests": "Muitas tentativas. Tente novamente mais tarde.",
     "auth/network-request-failed": "Falha de conexão com a internet.",
+    "auth/requires-recent-login": "Por segurança, entre novamente na conta e tente alterar o e-mail.",
+    "auth/invalid-new-email": "O novo e-mail informado é inválido.",
     "permission-denied": "A operação foi bloqueada pelas regras do Firebase."
   };
   return messages[error?.code] || error?.message || "Não foi possível concluir a operação.";
@@ -4872,6 +5098,143 @@ function mapFirebaseError(error) {
 
 window.openAuth = openAuth;
 window.setView = setView;
+
+window.openProfileEdit = function() {
+  if (!state.currentUser || !isActiveUser()) return;
+  state.profileEditOpen = true;
+  renderProfile();
+  requestAnimationFrame(() => {
+    document.querySelector(".profile-edit-card")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  });
+};
+
+window.closeProfileEdit = function() {
+  state.profileEditOpen = false;
+  renderProfile();
+};
+
+window.saveAccountProfile = async function(event) {
+  event.preventDefault();
+
+  if (LOCAL_MODE) {
+    alert("A edição da conta estará disponível quando o Firebase estiver conectado.");
+    return;
+  }
+
+  if (!ensureFirebaseReady() || !state.currentUser) return;
+
+  const firebaseUser = auth?.currentUser;
+  if (!firebaseUser) {
+    alert("Entre novamente na conta para editar seus dados.");
+    return;
+  }
+
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const newName = String(data.get("accountName") || "").trim();
+  const newEmail = String(data.get("accountEmail") || "").trim().toLowerCase();
+  const currentAuthEmail = String(firebaseUser.email || "").trim().toLowerCase();
+
+  if (!newName) {
+    alert("Informe seu nome completo.");
+    return;
+  }
+
+  if (!isValidInstitutionalEmailForUser(newEmail)) {
+    const domain = getAccountDomainForUser();
+    alert(`Use um e-mail institucional válido terminado em @${domain}.`);
+    return;
+  }
+
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const nameChanged = newName !== state.currentUser.name;
+    const emailChanged = newEmail !== currentAuthEmail;
+
+    if (!nameChanged && !emailChanged) {
+      state.profileEditOpen = false;
+      renderProfile();
+      alert("Nenhuma alteração foi identificada.");
+      return;
+    }
+
+    if (nameChanged) {
+      await updateProfile(firebaseUser, { displayName: newName });
+
+      await updateDoc(doc(db, "users", state.currentUser.uid), {
+        name: newName,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    if (emailChanged) {
+      await verifyBeforeUpdateEmail(firebaseUser, newEmail);
+      setPendingAccountEmail(newEmail);
+    }
+
+    state.profileEditOpen = false;
+    renderProfile();
+
+    if (emailChanged) {
+      alert(
+        nameChanged
+          ? "Nome atualizado. Também enviamos uma confirmação para o novo e-mail institucional."
+          : "Enviamos uma confirmação para o novo e-mail institucional. A troca só será concluída depois da confirmação."
+      );
+    } else {
+      alert("Nome atualizado com sucesso.");
+    }
+  } catch (error) {
+    console.error("Erro ao editar dados da conta:", error);
+    alert(mapFirebaseError(error));
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+};
+
+window.confirmNewAccountEmail = async function() {
+  if (LOCAL_MODE || !ensureFirebaseReady()) return;
+
+  const firebaseUser = auth?.currentUser;
+  if (!firebaseUser) {
+    alert("Entre novamente na conta para atualizar o novo e-mail.");
+    return;
+  }
+
+  try {
+    await reload(firebaseUser);
+    await getIdToken(firebaseUser, true);
+    state.authUser = firebaseUser;
+
+    const pendingEmail = getPendingAccountEmail();
+    const currentEmail = String(firebaseUser.email || "").trim().toLowerCase();
+
+    if (pendingEmail && currentEmail !== pendingEmail.toLowerCase()) {
+      alert("O novo e-mail ainda não aparece como confirmado. Confirme o link recebido e tente novamente.");
+      return;
+    }
+
+    await syncAuthenticatedEmailToProfile(firebaseUser);
+
+    if (state.currentUser) {
+      state.currentUser.email = currentEmail;
+      state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+    }
+
+    setPendingAccountEmail("");
+    renderAll();
+    updateAccessState();
+    alert("Novo e-mail confirmado e sincronizado com o TechLib.");
+  } catch (error) {
+    console.error("Erro ao confirmar novo e-mail:", error);
+    alert(mapFirebaseError(error));
+  }
+};
 
 window.setAdminViewRole = function(role) {
   if (!isActualAdministrator()) return;
@@ -6036,6 +6399,12 @@ window.confirmEmailVerification = async function() {
       return;
     }
 
+    await syncAuthenticatedEmailToProfile(firebaseUser);
+
+    if (state.currentUser && firebaseUser.email) {
+      state.currentUser.email = String(firebaseUser.email).toLowerCase();
+    }
+
     // Recarrega os listeners que dependem do nível de acesso e da verificação.
     state.lastAccessSignature = "";
     startPrivateDataListeners();
@@ -6199,6 +6568,11 @@ elements.authForm.addEventListener("submit", async event => {
       if (password !== confirmation) throw new Error("As senhas não coincidem.");
 
       const credential = await createUserWithEmailAndPassword(auth, email, password);
+
+      await updateProfile(credential.user, {
+        displayName: name
+      });
+
       await setDoc(doc(db, "users", credential.user.uid), {
         name,
         email,
@@ -6266,6 +6640,19 @@ if (LOCAL_MODE) {
       try {
         await ensureUserDocument(firebaseUser);
         startUserListener(firebaseUser);
+
+        if (firebaseUser.emailVerified) {
+          setTimeout(async () => {
+            try {
+              await reload(firebaseUser);
+              await getIdToken(firebaseUser, true);
+              state.authUser = firebaseUser;
+              await syncAuthenticatedEmailToProfile(firebaseUser);
+            } catch (syncError) {
+              console.warn("Sincronização de e-mail pendente:", syncError);
+            }
+          }, 700);
+        }
       } catch (error) {
         console.error("Erro ao preparar perfil:", error);
         setFirebaseStatus("Não foi possível preparar o perfil do usuário.", "error");
