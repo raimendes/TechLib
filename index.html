@@ -4473,6 +4473,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Adicionado relatório do acervo para Administrador, Bibliotecário e Aluno operador, com opção de impressão ou salvar em PDF.</li>
         <li>Corrigido o domínio institucional dos professores para @educar.rn.gov.br.</li>
         <li>Contas com e-mail ainda não confirmado agora entram em uma tela exclusiva de aguardando validação.</li>
         <li>Enquanto o e-mail estiver pendente, Empréstimos, Reservas e Gestão ficam ocultos e bloqueados.</li>
@@ -4716,8 +4717,11 @@ function renderBookManagementCard() {
   return `
     <article class="management-card">
       <h3>Gerenciamento do acervo</h3>
-      <p>Cadastre, importe e atualize as informações dos livros.</p>
-      <button class="primary-button" onclick="openBookForm()">Cadastrar livro</button>
+      <p>Cadastre, importe, atualize e gere relatórios do acervo.</p>
+      <div class="book-form-actions" style="margin-top:10px;">
+        <button class="primary-button" onclick="openBookForm()">Cadastrar livro</button>
+        <button class="secondary-button" onclick="generateCollectionReport()">Gerar relatório do acervo</button>
+      </div>
       ${renderBookImportSection()}
       ${form}
       <div class="permission-list" style="margin-top:14px;">${catalogItems}</div>
@@ -5793,6 +5797,244 @@ window.confirmBookImport = async function() {
     renderManagement();
     alert(mapFirebaseError(error));
   }
+};
+
+
+window.generateCollectionReport = function() {
+  if (!ensureVerified() || !canOperateLibrary()) {
+    alert("Você não possui permissão para gerar relatórios do acervo.");
+    return;
+  }
+
+  if (!state.books.length) {
+    alert("Não há livros cadastrados para gerar o relatório.");
+    return;
+  }
+
+  const books = [...state.books].sort((a, b) =>
+    displayBookField(a.title).localeCompare(displayBookField(b.title), "pt-BR")
+  );
+
+  const totalRecords = books.length;
+  const booksWithKnownQuantity = books.filter(book =>
+    Number.isInteger(book.quantity) && book.quantity >= 1
+  );
+  const unknownQuantityCount = totalRecords - booksWithKnownQuantity.length;
+  const totalCopies = booksWithKnownQuantity.reduce(
+    (sum, book) => sum + book.quantity,
+    0
+  );
+  const totalLoaned = books.reduce(
+    (sum, book) => sum + Math.max(0, Number(book.loanedCount) || 0),
+    0
+  );
+  const totalReserved = books.reduce(
+    (sum, book) => sum + Math.max(0, Number(book.reservedCount) || 0),
+    0
+  );
+  const totalAvailable = books.reduce(
+    (sum, book) => sum + getAvailableCopies(book),
+    0
+  );
+
+  const generatedAt = new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date());
+
+  const generatedBy = displayBookField(state.currentUser?.name);
+  const generatedRole = getEffectiveRole() || state.currentUser?.role || "Usuário autorizado";
+
+  const rows = books.map((book, index) => {
+    const quantityKnown = Number.isInteger(book.quantity) && book.quantity >= 1;
+    const quantity = quantityKnown ? String(book.quantity) : "Não informada";
+    const available = quantityKnown ? String(getAvailableCopies(book)) : "—";
+    const loaned = Math.max(0, Number(book.loanedCount) || 0);
+    const reserved = Math.max(0, Number(book.reservedCount) || 0);
+
+    return `
+      <tr>
+        <td class="num">${index + 1}</td>
+        <td>${escapeHtml(displayBookField(book.title))}</td>
+        <td>${escapeHtml(displayBookField(book.author))}</td>
+        <td>${escapeHtml(displayBookField(book.genre))}</td>
+        <td class="center">${escapeHtml(quantity)}</td>
+        <td class="center">${escapeHtml(available)}</td>
+        <td class="center">${loaned}</td>
+        <td class="center">${reserved}</td>
+        <td>${escapeHtml(displayBookField(book.condition))}</td>
+        <td>${escapeHtml(displayBookField(book.damage))}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!reportWindow) {
+    alert("O navegador bloqueou a abertura do relatório. Permita pop-ups para o TechLib e tente novamente.");
+    return;
+  }
+
+  const reportHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relatório do Acervo - TechLib</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      background: #ffffff;
+      font-size: 11px;
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      border-bottom: 2px solid #111827;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    h2 { margin: 0; font-size: 13px; font-weight: 600; }
+    .meta { text-align: right; line-height: 1.45; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(100px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .summary-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      padding: 9px;
+    }
+    .summary-card span {
+      display: block;
+      color: #475569;
+      font-size: 9px;
+      margin-bottom: 4px;
+    }
+    .summary-card strong { font-size: 15px; }
+    .note {
+      margin: 0 0 12px;
+      color: #475569;
+      font-size: 9px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 6px;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+    th {
+      background: #eef2f7;
+      font-size: 9px;
+      text-align: left;
+    }
+    td { font-size: 9px; line-height: 1.3; }
+    .num { width: 32px; text-align: center; }
+    .center { text-align: center; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    button {
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 8px 12px;
+      background: #ffffff;
+      color: #111827;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: #111827; color: #ffffff; }
+    .footer {
+      margin-top: 14px;
+      color: #64748b;
+      font-size: 9px;
+    }
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+      thead { display: table-header-group; }
+      tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions no-print">
+    <button class="primary" onclick="window.print()">Imprimir / Salvar em PDF</button>
+    <button onclick="window.close()">Fechar</button>
+  </div>
+
+  <header class="report-header">
+    <div>
+      <h1>TechLib</h1>
+      <h2>Relatório do Acervo</h2>
+    </div>
+    <div class="meta">
+      <strong>Gerado em:</strong> ${escapeHtml(generatedAt)}<br>
+      <strong>Responsável:</strong> ${escapeHtml(generatedBy)}<br>
+      <strong>Perfil:</strong> ${escapeHtml(generatedRole)}
+    </div>
+  </header>
+
+  <section class="summary">
+    <div class="summary-card"><span>Títulos / registros</span><strong>${totalRecords}</strong></div>
+    <div class="summary-card"><span>Exemplares informados</span><strong>${totalCopies}</strong></div>
+    <div class="summary-card"><span>Quantidade não informada</span><strong>${unknownQuantityCount}</strong></div>
+    <div class="summary-card"><span>Disponíveis</span><strong>${totalAvailable}</strong></div>
+    <div class="summary-card"><span>Emprestados</span><strong>${totalLoaned}</strong></div>
+    <div class="summary-card"><span>Reservados</span><strong>${totalReserved}</strong></div>
+  </section>
+
+  <p class="note">
+    Os totais de exemplares e de disponibilidade consideram apenas registros com quantidade cadastrada.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:3%;">Nº</th>
+        <th style="width:18%;">Título</th>
+        <th style="width:13%;">Autor</th>
+        <th style="width:10%;">Gênero ou CDU</th>
+        <th style="width:7%;">Quantidade</th>
+        <th style="width:7%;">Disponíveis</th>
+        <th style="width:7%;">Emprestados</th>
+        <th style="width:7%;">Reservados</th>
+        <th style="width:10%;">Estado</th>
+        <th style="width:18%;">Situação / avaria</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="footer">
+    Relatório gerado pelo TechLib. Registros com quantidade não informada permanecem no acervo, mas não entram no total de exemplares disponíveis.
+  </div>
+</body>
+</html>`;
+
+  reportWindow.document.open();
+  reportWindow.document.write(reportHtml);
+  reportWindow.document.close();
 };
 
 window.saveBook = async function(event) {
