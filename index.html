@@ -4393,6 +4393,10 @@ function renderEmailVerificationWait() {
           Reenviar confirmação
         </button>
 
+        <button class="secondary-button" type="button" onclick="refreshMyAccess()">
+          Atualizar meu acesso
+        </button>
+
         <button class="secondary-button" type="button" onclick="simulatePasswordReset()">
           Alterar ou recuperar senha
         </button>
@@ -4401,6 +4405,16 @@ function renderEmailVerificationWait() {
           Sair da conta
         </button>
       </div>
+
+      ${state.currentUser?.canManageCollection ? `
+        <div class="pending-email-card" style="text-align:left;">
+          <strong>Permissão de aluno operador já concedida</strong>
+          <span>
+            Sua conta já recebeu acesso de operador, mas as funções de Gestão só serão liberadas
+            depois que o e-mail institucional estiver confirmado.
+          </span>
+        </div>
+      ` : ""}
 
       <p class="verification-wait-note">
         Enquanto a confirmação estiver pendente, empréstimos, reservas e funções de gestão permanecem bloqueados.
@@ -4554,6 +4568,21 @@ function renderProfile() {
         <span class="chevron">›</span>
       </button>
 
+      ${state.currentUser.baseRole === "Aluno" ? `
+        <button class="option-card" onclick="refreshMyAccess()">
+          <span class="option-icon">↻</span>
+          <span>
+            <strong>Atualizar meu acesso</strong>
+            <span>
+              ${state.currentUser.canManageCollection
+                ? "Permissão de aluno operador ativa. Atualize para recarregar as funções."
+                : "Recarregar permissões e situação da conta."}
+            </span>
+          </span>
+          <span class="chevron">›</span>
+        </button>
+      ` : ""}
+
       <button class="option-card" onclick="simulatePasswordReset()">
         <span class="option-icon">⌘</span>
         <span>
@@ -4573,6 +4602,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Adicionado “Atualizar meu acesso” para o aluno recarregar imediatamente permissões, confirmação de e-mail e perfil do Firestore.</li>
+        <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
         <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
         <li>Administrador agora pode corrigir o nome de cadastros antigos diretamente na Gestão, sem excluir a conta do aluno.</li>
         <li>Corrigido o salvamento do nome completo no cadastro, evitando que a matrícula do e-mail seja gravada como nome por causa da sincronização antecipada.</li>
@@ -5414,6 +5445,70 @@ function mapFirebaseError(error) {
 
 window.openAuth = openAuth;
 window.setView = setView;
+
+window.refreshMyAccess = async function() {
+  if (LOCAL_MODE || !ensureFirebaseReady()) return;
+
+  const firebaseUser = auth?.currentUser || state.authUser;
+  if (!firebaseUser) {
+    alert("Entre novamente na conta para atualizar o acesso.");
+    return;
+  }
+
+  try {
+    setFirebaseStatus("Atualizando situação da conta...", "pending");
+
+    await reload(firebaseUser);
+    await getIdToken(firebaseUser, true);
+    state.authUser = firebaseUser;
+
+    // Garante que o perfil exista e busca diretamente a versão mais recente
+    // do documento users, sem depender apenas do listener em tempo real.
+    await ensureUserDocument(firebaseUser);
+
+    const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
+    if (!userSnapshot.exists()) {
+      throw new Error("Perfil do usuário não encontrado no Firestore.");
+    }
+
+    state.currentUser = normalizeUserSnapshot(userSnapshot);
+    state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+
+    state.lastAccessSignature = "";
+    startUserListener(firebaseUser);
+    startPrivateDataListeners();
+
+    updateAccessState();
+    renderAll();
+    setView("profile");
+
+    if (!firebaseUser.emailVerified) {
+      setFirebaseStatus(
+        "Conta atualizada. Confirme o e-mail institucional para liberar as funções.",
+        "pending"
+      );
+
+      alert(
+        state.currentUser.canManageCollection
+          ? "A permissão de aluno operador já foi concedida, mas o e-mail ainda precisa ser confirmado."
+          : "A conta foi atualizada, mas o e-mail ainda precisa ser confirmado."
+      );
+      return;
+    }
+
+    if (state.currentUser.canManageCollection) {
+      setFirebaseStatus("Acesso de aluno operador atualizado.", "ready");
+      alert("Acesso atualizado. As funções de aluno operador estão liberadas.");
+    } else {
+      setFirebaseStatus("Conta atualizada.", "ready");
+      alert("Conta atualizada. Ainda não há permissão de aluno operador para este perfil.");
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar acesso:", error);
+    setFirebaseStatus("Não foi possível atualizar o acesso da conta.", "error");
+    alert(mapFirebaseError(error));
+  }
+};
 
 window.openProfileEdit = function() {
   if (!state.currentUser || !isActiveUser()) return;
@@ -6925,6 +7020,12 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
       updatedAt: serverTimestamp()
     });
     state.studentPermissionSearch = "";
+
+    alert(
+      grant
+        ? "Acesso de aluno operador concedido. Na conta do aluno, use “Atualizar meu acesso”. Se o e-mail ainda não estiver confirmado, as funções permanecerão bloqueadas até a confirmação."
+        : "Acesso de aluno operador removido."
+    );
   } catch (error) {
     console.error(error);
     alert(mapFirebaseError(error));
