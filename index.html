@@ -4498,6 +4498,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigida a sincronização entre contas de alunos do Firebase Authentication e os perfis da coleção users no Firestore.</li>
+        <li>A Gestão agora informa quantos alunos estão sincronizados antes da pesquisa por operador.</li>
         <li>Corrigido o domínio institucional dos alunos para @estudante.rn.gov.br.</li>
         <li>O cadastro agora entra imediatamente em “Aguardando confirmação do e-mail” depois que a conta é criada.</li>
         <li>O envio da confirmação de e-mail não depende mais da criação do perfil no Firestore.</li>
@@ -4913,7 +4915,9 @@ function renderStudentPermissionSearchResults() {
 
   summary.textContent = matches.length
     ? `${matches.length} ${matches.length === 1 ? "aluno encontrado" : "alunos encontrados"}`
-    : "Nenhum aluno encontrado.";
+    : students.length
+      ? "Nenhum aluno encontrado com esse nome ou e-mail."
+      : "Nenhum perfil de aluno está sincronizado no Firestore.";
 
   container.innerHTML = matches.map(user => {
     const active = user.isActive !== false;
@@ -4991,6 +4995,13 @@ function renderUserPermissionsCard() {
     <article class="management-card">
       <h3>Alunos operadores</h3>
       <p>Pesquise alunos para conceder acesso de operador, remover permissões ou desativar e reativar perfis.</p>
+
+      <div class="permission-search-help" style="margin-top:8px;">
+        ${students.length} ${students.length === 1 ? "aluno sincronizado" : "alunos sincronizados"} no TechLib.
+        ${students.length === 0
+          ? " Se já existem contas no Firebase Authentication, peça aos alunos para entrarem novamente no TechLib para concluir a sincronização do perfil."
+          : ""}
+      </div>
 
       <div class="permission-section-title">Operadores atuais</div>
       <div class="permission-list">
@@ -6795,6 +6806,11 @@ window.confirmEmailVerification = async function() {
       return;
     }
 
+    // Se a conta existia apenas no Authentication por causa de uma falha
+    // anterior, cria agora o perfil no Firestore antes de liberar o acesso.
+    await ensureUserDocument(firebaseUser);
+    startUserListener(firebaseUser);
+
     await syncAuthenticatedEmailToProfile(firebaseUser);
 
     if (state.currentUser && firebaseUser.email) {
@@ -6829,6 +6845,14 @@ window.resendVerification = async function() {
 
   try {
     await reload(firebaseUser);
+
+    // Garante que contas já criadas no Authentication também possuam
+    // o perfil correspondente na coleção users do Firestore.
+    try {
+      await ensureUserDocument(firebaseUser);
+    } catch (profileSyncError) {
+      console.warn("Perfil ainda não sincronizado no Firestore:", profileSyncError);
+    }
 
     if (firebaseUser.emailVerified) {
       state.authUser = firebaseUser;
@@ -7065,6 +7089,14 @@ elements.authForm.addEventListener("submit", async event => {
       });
     } catch (firestoreProfileError) {
       console.error("Conta criada, mas o perfil no Firestore será tentado novamente:", firestoreProfileError);
+
+      setTimeout(async () => {
+        try {
+          await ensureUserDocument(credential.user);
+        } catch (retryError) {
+          console.warn("Nova tentativa de sincronização do perfil:", retryError);
+        }
+      }, 1500);
     }
 
     closeAuth();
