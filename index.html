@@ -3512,10 +3512,16 @@ async function ensureUserDocument(
       ) &&
       storedName !== authName
     ) {
-      await updateDoc(userRef, {
-        name: authName,
-        updatedAt: serverTimestamp()
-      });
+      try {
+        await updateDoc(userRef, {
+          name: authName,
+          updatedAt: serverTimestamp()
+        });
+      } catch (nameRepairError) {
+        // A conta já existe e continua válida. Uma eventual falha ao
+        // corrigir o nome não deve impedir o carregamento do perfil.
+        console.warn("Não foi possível reparar automaticamente o nome:", nameRepairError);
+      }
     }
 
     return;
@@ -4567,6 +4573,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
+        <li>Administrador agora pode corrigir o nome de cadastros antigos diretamente na Gestão, sem excluir a conta do aluno.</li>
         <li>Corrigido o salvamento do nome completo no cadastro, evitando que a matrícula do e-mail seja gravada como nome por causa da sincronização antecipada.</li>
         <li>Cadastros antigos sem nome válido agora exibem “Nome ainda não informado” e solicitam ao aluno que complete o nome no Perfil.</li>
         <li>Corrigida a exibição dos nomes dos alunos sincronizados na Gestão, com recuperação automática do nome quando disponível no Firebase.</li>
@@ -5047,6 +5055,14 @@ function renderUserPermissionsCard() {
             <span>${escapeHtml(user.email)}</span>
           </div>
           <div class="permission-actions">
+            ${getEffectiveRole() === "Administrador" && !hasValidUserName(user) ? `
+              <button
+                class="small-button"
+                onclick="editManagedStudentName('${user.uid}')"
+              >
+                Corrigir nome
+              </button>
+            ` : ""}
             <button
               class="small-button"
               onclick="toggleStudentCollectionPermission('${user.uid}', false)"
@@ -5086,6 +5102,14 @@ function renderUserPermissionsCard() {
                 </div>
               </div>
               <div class="permission-actions">
+                ${getEffectiveRole() === "Administrador" && !hasValidUserName(user) ? `
+                  <button
+                    class="small-button"
+                    onclick="editManagedStudentName('${user.uid}')"
+                  >
+                    Corrigir nome
+                  </button>
+                ` : ""}
                 ${active ? `
                   <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', true)">
                     Conceder acesso
@@ -5110,7 +5134,10 @@ function renderUserPermissionsCard() {
       <div class="permission-search-help" style="margin-top:8px;">
         ${students.length} ${students.length === 1 ? "aluno sincronizado" : "alunos sincronizados"} no TechLib.
         ${students.length === 0
-          ? " Se já existem contas no Firebase Authentication, peça aos alunos para entrarem novamente no TechLib para concluir a sincronização do perfil."
+          ? " Se já existem contas no Firebase Authentication, elas ainda precisam ser sincronizadas com o perfil do TechLib."
+          : ""}
+        ${students.some(user => !hasValidUserName(user)) && getEffectiveRole() === "Administrador"
+          ? " Cadastros antigos sem nome válido podem ser corrigidos pelo botão Corrigir nome."
           : ""}
       </div>
 
@@ -6801,6 +6828,47 @@ window.updateStudentPermissionSearch = function(value) {
   renderStudentPermissionSearchResults();
 };
 
+window.editManagedStudentName = async function(uid) {
+  if (!ensureVerified() || getEffectiveRole() !== "Administrador") return;
+
+  const target = state.users.find(user => user.uid === uid);
+  if (!target || target.baseRole !== "Aluno") return;
+
+  const currentName = hasValidUserName(target) ? target.name : "";
+  const informedName = prompt(
+    `Informe o nome completo do aluno\n${target.email}`,
+    currentName
+  );
+
+  if (informedName === null) return;
+
+  const newName = String(informedName || "").trim();
+  if (newName.length < 3 || !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(newName)) {
+    alert("Informe um nome válido.");
+    return;
+  }
+
+  if (LOCAL_MODE) {
+    target.name = newName;
+    target.updatedAt = localTimestamp();
+    refreshLocalState("Nome do aluno atualizado.");
+    return;
+  }
+
+  if (!ensureFirebaseReady()) return;
+
+  try {
+    await updateDoc(doc(db, "users", uid), {
+      name: newName,
+      updatedAt: serverTimestamp()
+    });
+    alert("Nome do aluno atualizado.");
+  } catch (error) {
+    console.error("Erro ao corrigir nome do aluno:", error);
+    alert(mapFirebaseError(error));
+  }
+};
+
 window.toggleUserActiveStatus = async function(uid, activate) {
   if (!ensureVerified() || !canManageUsers()) return;
   if (uid === state.currentUser?.uid) {
@@ -7335,9 +7403,12 @@ if (LOCAL_MODE) {
         setView("profile");
       }
 
+      // Começa a acompanhar o documento imediatamente. Se ele já existir,
+      // o perfil carrega mesmo que uma tentativa de correção de nome falhe.
+      startUserListener(firebaseUser);
+
       try {
         await ensureUserDocument(firebaseUser);
-        startUserListener(firebaseUser);
 
         if (firebaseUser.emailVerified) {
           setTimeout(async () => {
@@ -7352,17 +7423,16 @@ if (LOCAL_MODE) {
           }, 700);
         }
       } catch (error) {
-        console.error("Erro ao preparar perfil:", error);
+        console.warn("Perfil autenticado, mas houve uma pendência de sincronização:", error);
 
-        if (!firebaseUser.emailVerified) {
-          setFirebaseStatus(
-            "Conta criada. O e-mail ainda precisa ser confirmado. O perfil será sincronizado novamente no próximo acesso.",
-            "pending"
-          );
-          setView("profile");
-        } else {
-          setFirebaseStatus("Não foi possível preparar o perfil do usuário.", "error");
-        }
+        setFirebaseStatus(
+          firebaseUser.emailVerified
+            ? "Conta conectada. Algumas informações do perfil ainda estão sendo sincronizadas."
+            : "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
+          "pending"
+        );
+
+        if (!firebaseUser.emailVerified) setView("profile");
       }
     });
   } catch (error) {
