@@ -2497,11 +2497,39 @@ function normalizeBookSnapshot(snapshot) {
   };
 }
 
+
+function getUserVisibleName(user) {
+  const rawName = String(user?.name || "").trim();
+  const emailPrefix = String(user?.email || "")
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (
+    rawName &&
+    rawName.toLowerCase() !== "usuário" &&
+    rawName.toLowerCase() !== "usuario"
+  ) {
+    return rawName;
+  }
+
+  if (emailPrefix) {
+    return emailPrefix
+      .split(" ")
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }
+
+  return "Nome não informado";
+}
+
 function normalizeUserSnapshot(snapshot) {
   const data = snapshot.data();
   return {
     uid: snapshot.id,
-    name: String(data.name || "Usuário").trim(),
+    name: String(data.name || "").trim(),
     email: String(data.email || "").toLowerCase(),
     baseRole: data.baseRole === "Professor" ? "Professor" : "Aluno",
     role: ["Aluno", "Professor", "Bibliotecário", "Administrador"].includes(data.role)
@@ -3456,14 +3484,36 @@ function buildPendingProfileFromAuth(firebaseUser, preferredRole = null, preferr
 async function ensureUserDocument(firebaseUser) {
   const userRef = doc(db, "users", firebaseUser.uid);
   const snapshot = await getDoc(userRef);
-  if (snapshot.exists()) return;
+
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    const storedName = String(data.name || "").trim();
+    const authName = String(firebaseUser.displayName || "").trim();
+
+    if (
+      authName &&
+      (
+        !storedName ||
+        storedName.toLowerCase() === "usuário" ||
+        storedName.toLowerCase() === "usuario" ||
+        storedName === String(firebaseUser.email || "").split("@")[0]
+      )
+    ) {
+      await updateDoc(userRef, {
+        name: authName,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    return;
+  }
 
   const baseRole = firebaseUser.email?.endsWith(`@${ROLE_DOMAINS.Professor}`)
     ? "Professor"
     : "Aluno";
 
   await setDoc(userRef, {
-    name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Usuário",
+    name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
     email: String(firebaseUser.email || "").toLowerCase(),
     baseRole,
     role: baseRole,
@@ -4371,7 +4421,7 @@ function renderProfile() {
         <div class="account-head">
           <div class="avatar">!</div>
           <div>
-            <strong>${escapeHtml(state.currentUser.name)}</strong>
+            <strong>${escapeHtml(getUserVisibleName(state.currentUser))}</strong>
             <span>${escapeHtml(state.currentUser.email)}</span>
           </div>
         </div>
@@ -4404,7 +4454,7 @@ function renderProfile() {
       <div class="account-head">
         <div class="avatar">${escapeHtml(initials || "U")}</div>
         <div>
-          <strong>${escapeHtml(state.currentUser.name)}</strong>
+          <strong>${escapeHtml(getUserVisibleName(state.currentUser))}</strong>
           <span>${escapeHtml(state.currentUser.email)}</span>
         </div>
       </div>
@@ -4498,6 +4548,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigida a exibição dos nomes dos alunos sincronizados na Gestão, com recuperação automática do nome quando disponível no Firebase.</li>
         <li>Corrigida a sincronização entre contas de alunos do Firebase Authentication e os perfis da coleção users no Firestore.</li>
         <li>Quando há até 10 alunos sincronizados, a Gestão agora exibe todos diretamente para concessão de acesso como operador.</li>
         <li>A Gestão agora informa quantos alunos estão sincronizados antes da pesquisa por operador.</li>
@@ -4925,7 +4976,7 @@ function renderStudentPermissionSearchResults() {
     return `
       <div class="permission-user">
         <div>
-          <strong>${escapeHtml(user.name)}</strong>
+          <strong>${escapeHtml(getUserVisibleName(user))}</strong>
           <span>${escapeHtml(user.email)}</span>
           <div class="user-status-row">
             <span class="user-status-badge ${active ? "active" : "inactive"}">
@@ -4965,13 +5016,13 @@ function renderUserPermissionsCard() {
   const students = state.users.filter(user => user.baseRole === "Aluno");
   const operators = students
     .filter(user => user.canManageCollection && user.isActive !== false)
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const operatorsContent = operators.length
     ? operators.map(user => `
         <div class="permission-user">
           <div>
-            <strong>${escapeHtml(user.name)}</strong>
+            <strong>${escapeHtml(getUserVisibleName(user))}</strong>
             <span>${escapeHtml(user.email)}</span>
           </div>
           <div class="permission-actions">
@@ -4994,7 +5045,7 @@ function renderUserPermissionsCard() {
 
   const availableStudents = students
     .filter(user => !user.canManageCollection)
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const showSyncedStudents = students.length > 0 && students.length <= 10;
 
@@ -5005,7 +5056,7 @@ function renderUserPermissionsCard() {
           return `
             <div class="permission-user">
               <div>
-                <strong>${escapeHtml(user.name)}</strong>
+                <strong>${escapeHtml(getUserVisibleName(user))}</strong>
                 <span>${escapeHtml(user.email)}</span>
                 <div class="user-status-row">
                   <span class="user-status-badge ${active ? "active" : "inactive"}">
