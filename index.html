@@ -2498,31 +2498,22 @@ function normalizeBookSnapshot(snapshot) {
 }
 
 
-function getUserVisibleName(user) {
+function hasValidUserName(user) {
   const rawName = String(user?.name || "").trim();
-  const emailPrefix = String(user?.email || "")
-    .split("@")[0]
-    .replace(/[._-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const emailPrefix = String(user?.email || "").split("@")[0].trim();
 
-  if (
-    rawName &&
-    rawName.toLowerCase() !== "usuário" &&
-    rawName.toLowerCase() !== "usuario"
-  ) {
-    return rawName;
-  }
+  if (!rawName) return false;
+  if (["usuário", "usuario"].includes(rawName.toLowerCase())) return false;
+  if (rawName === emailPrefix) return false;
+  if (/^\d+$/.test(rawName)) return false;
 
-  if (emailPrefix) {
-    return emailPrefix
-      .split(" ")
-      .filter(Boolean)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-  }
+  return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(rawName);
+}
 
-  return "Nome não informado";
+function getUserVisibleName(user) {
+  return hasValidUserName(user)
+    ? String(user.name).trim()
+    : "Nome ainda não informado";
 }
 
 function normalizeUserSnapshot(snapshot) {
@@ -4306,7 +4297,7 @@ function renderProfileEditCard() {
               name="accountName"
               maxlength="120"
               required
-              value="${escapeHtml(state.currentUser?.name || "")}"
+              value="${escapeHtml(hasValidUserName(state.currentUser) ? state.currentUser.name : "")}"
             >
           </label>
 
@@ -4468,6 +4459,16 @@ function renderProfile() {
         : ""}
     </article>
 
+    ${!hasValidUserName(state.currentUser) ? `
+      <div class="empty-state" style="margin-top:12px; text-align:left;">
+        Seu nome completo ainda não está registrado no TechLib.
+        Atualize esse dado para que ele apareça corretamente na Gestão.
+        <button class="primary-button" style="margin-top:10px;" onclick="openProfileEdit()">
+          Informar meu nome
+        </button>
+      </div>
+    ` : ""}
+
     ${isActualAdministrator() ? `
       <div class="admin-view-card">
         <strong>Visualizar como</strong>
@@ -4548,6 +4549,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Cadastros antigos sem nome válido agora exibem “Nome ainda não informado” e solicitam ao aluno que complete o nome no Perfil.</li>
         <li>Corrigida a exibição dos nomes dos alunos sincronizados na Gestão, com recuperação automática do nome quando disponível no Firebase.</li>
         <li>Corrigida a sincronização entre contas de alunos do Firebase Authentication e os perfis da coleção users no Firestore.</li>
         <li>Quando há até 10 alunos sincronizados, a Gestão agora exibe todos diretamente para concessão de acesso como operador.</li>
