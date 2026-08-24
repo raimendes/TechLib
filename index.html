@@ -2178,7 +2178,7 @@
 <span class="role-icon">A</span>
 <span>
 <strong>Aluno</strong>
-<span>@estudante.gov.rn.br</span>
+<span>@estudante.rn.gov.br</span>
 </span>
 <span class="role-arrow">›</span>
 </button>
@@ -2269,7 +2269,7 @@ const firebaseConfig = {
 
 const ROLE_DOMAINS = {
   Professor: "educar.rn.gov.br",
-  Aluno: "estudante.gov.rn.br"
+  Aluno: "estudante.rn.gov.br"
 };
 
 
@@ -3428,6 +3428,31 @@ function startPublicContentListeners() {
   );
 }
 
+
+function buildPendingProfileFromAuth(firebaseUser, preferredRole = null, preferredName = "") {
+  const email = String(firebaseUser?.email || "").trim().toLowerCase();
+  const detectedRole = preferredRole || (
+    email.endsWith(`@${ROLE_DOMAINS.Professor}`) ? "Professor" : "Aluno"
+  );
+
+  return {
+    uid: firebaseUser?.uid || "",
+    name: String(
+      preferredName ||
+      firebaseUser?.displayName ||
+      email.split("@")[0] ||
+      "Usuário"
+    ).trim(),
+    email,
+    baseRole: detectedRole,
+    role: detectedRole,
+    canManageCollection: false,
+    isActive: true,
+    emailVerified: Boolean(firebaseUser?.emailVerified),
+    profilePending: true
+  };
+}
+
 async function ensureUserDocument(firebaseUser) {
   const userRef = doc(db, "users", firebaseUser.uid);
   const snapshot = await getDoc(userRef);
@@ -4473,6 +4498,10 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigido o domínio institucional dos alunos para @estudante.rn.gov.br.</li>
+        <li>O cadastro agora entra imediatamente em “Aguardando confirmação do e-mail” depois que a conta é criada.</li>
+        <li>O envio da confirmação de e-mail não depende mais da criação do perfil no Firestore.</li>
+        <li>Recuperação de senha e reenvio de confirmação agora usam diretamente o e-mail autenticado no Firebase.</li>
         <li>Adicionado relatório do acervo para Administrador, Bibliotecário e Aluno operador, com opção de impressão ou salvar em PDF.</li>
         <li>Corrigido o domínio institucional dos professores para @educar.rn.gov.br.</li>
         <li>Contas com e-mail ainda não confirmado agora entram em uma tela exclusiva de aguardando validação.</li>
@@ -5212,7 +5241,7 @@ function buildAuthEmail() {
 
 function mapFirebaseError(error) {
   const messages = {
-    "auth/email-already-in-use": "Este e-mail já possui uma conta.",
+    "auth/email-already-in-use": "Este e-mail já possui uma conta. Se você acabou de se cadastrar, use Entrar com a mesma senha.",
     "auth/invalid-credential": "Conta não encontrada ou senha incorreta. Caso ainda não tenha cadastro, selecione Criar conta.",
     "auth/invalid-email": "E-mail institucional inválido.",
     "auth/weak-password": "A senha deve possuir pelo menos seis caracteres.",
@@ -6790,23 +6819,63 @@ window.confirmEmailVerification = async function() {
 };
 
 window.resendVerification = async function() {
-  if (!ensureFirebaseReady() || !state.authUser) return;
+  if (!ensureFirebaseReady()) return;
+
+  const firebaseUser = auth?.currentUser || state.authUser;
+  if (!firebaseUser) {
+    alert("Entre novamente na conta para reenviar a confirmação.");
+    return;
+  }
+
   try {
-    await sendEmailVerification(state.authUser);
-    alert("Novo link de confirmação enviado para o e-mail institucional.");
+    await reload(firebaseUser);
+
+    if (firebaseUser.emailVerified) {
+      state.authUser = firebaseUser;
+      if (state.currentUser) state.currentUser.emailVerified = true;
+      updateAccessState();
+      renderAll();
+      setView("profile");
+      alert("Este e-mail já está confirmado.");
+      return;
+    }
+
+    await sendEmailVerification(firebaseUser);
+    state.authUser = firebaseUser;
+
+    alert(
+      `Novo link de confirmação enviado para ${firebaseUser.email}. ` +
+      "Confira também a pasta Spam ou Lixo eletrônico."
+    );
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao reenviar confirmação:", error);
     alert(mapFirebaseError(error));
   }
 };
 
 window.simulatePasswordReset = async function() {
-  if (!ensureFirebaseReady() || !state.currentUser?.email) return;
+  if (!ensureFirebaseReady()) return;
+
+  const email = String(
+    auth?.currentUser?.email ||
+    state.authUser?.email ||
+    state.currentUser?.email ||
+    ""
+  ).trim().toLowerCase();
+
+  if (!email) {
+    alert("Não foi possível identificar o e-mail desta conta.");
+    return;
+  }
+
   try {
-    await sendPasswordResetEmail(auth, state.currentUser.email);
-    alert("Link de redefinição enviado para o e-mail institucional.");
+    await sendPasswordResetEmail(auth, email);
+    alert(
+      `Link para alterar ou recuperar a senha enviado para ${email}. ` +
+      "Confira também a pasta Spam ou Lixo eletrônico."
+    );
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao enviar recuperação de senha:", error);
     alert(mapFirebaseError(error));
   }
 };
@@ -6925,22 +6994,65 @@ elements.authForm.addEventListener("submit", async event => {
 
   const wasRegister = state.authMode === "register";
 
+  if (!wasRegister) {
+    try {
+      elements.authSubmitButton.disabled = true;
+      setAuthMessage("Entrando...", "");
+      await signInWithEmailAndPassword(auth, email, password);
+      closeAuth();
+      setView("home");
+    } catch (error) {
+      console.error(error);
+      setAuthMessage(mapFirebaseError(error), "error");
+    } finally {
+      elements.authSubmitButton.disabled = false;
+    }
+    return;
+  }
+
+  const name = elements.nameInput.value.trim();
+  const confirmation = elements.confirmPasswordInput.value;
+
+  if (!name) return setAuthMessage("Informe seu nome completo.", "error");
+  if (password !== confirmation) return setAuthMessage("As senhas não coincidem.", "error");
+
+  let credential = null;
+
   try {
     elements.authSubmitButton.disabled = true;
-    setAuthMessage("Processando...", "");
+    setAuthMessage("Criando conta...", "");
 
-    if (wasRegister) {
-      const name = elements.nameInput.value.trim();
-      const confirmation = elements.confirmPasswordInput.value;
-      if (!name) throw new Error("Informe seu nome completo.");
-      if (password !== confirmation) throw new Error("As senhas não coincidem.");
+    // Primeira etapa: cria a conta no Firebase Authentication.
+    credential = await createUserWithEmailAndPassword(auth, email, password);
 
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
+    // A partir daqui a conta JÁ EXISTE. Não deixamos mais o usuário preso
+    // no formulário caso alguma etapa secundária apresente erro.
+    state.authUser = credential.user;
+    state.currentUser = buildPendingProfileFromAuth(
+      credential.user,
+      state.selectedRole,
+      name
+    );
 
-      await updateProfile(credential.user, {
-        displayName: name
-      });
+    try {
+      await updateProfile(credential.user, { displayName: name });
+      state.currentUser.name = name;
+    } catch (profileNameError) {
+      console.warn("Não foi possível sincronizar o nome no Auth:", profileNameError);
+    }
 
+    // Envia a confirmação antes de depender do Firestore.
+    let verificationSent = false;
+    try {
+      await sendEmailVerification(credential.user);
+      verificationSent = true;
+    } catch (verificationError) {
+      console.error("Não foi possível enviar a confirmação:", verificationError);
+    }
+
+    // Tenta preparar o perfil no Firestore, mas um erro aqui não desfaz
+    // nem esconde a conta que já foi criada no Authentication.
+    try {
       await setDoc(doc(db, "users", credential.user.uid), {
         name,
         email,
@@ -6951,20 +7063,33 @@ elements.authForm.addEventListener("submit", async event => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-
-      try {
-        await sendEmailVerification(credential.user);
-      } catch (verificationError) {
-        console.warn("Não foi possível enviar a verificação:", verificationError);
-      }
-    } else {
-      await signInWithEmailAndPassword(auth, email, password);
+    } catch (firestoreProfileError) {
+      console.error("Conta criada, mas o perfil no Firestore será tentado novamente:", firestoreProfileError);
     }
 
     closeAuth();
-    setView(wasRegister ? "profile" : "home");
+    updateAccessState();
+    renderAll();
+    setView("profile");
+
+    setFirebaseStatus(
+      verificationSent
+        ? "Conta criada. Confirme o e-mail institucional para liberar as funções."
+        : "Conta criada. Use Reenviar confirmação para receber o link de validação.",
+      "pending"
+    );
+
+    if (!verificationSent) {
+      alert(
+        "Sua conta foi criada, mas o primeiro envio da confirmação não foi concluído. " +
+        "Na tela seguinte, clique em Reenviar confirmação."
+      );
+    }
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao criar conta:", error);
+
+    // Só mostramos "já existe" quando a criação do Authentication realmente
+    // não ocorreu nesta tentativa.
     setAuthMessage(mapFirebaseError(error), "error");
   } finally {
     elements.authSubmitButton.disabled = false;
@@ -7005,6 +7130,21 @@ if (LOCAL_MODE) {
         return;
       }
 
+      // Mostra imediatamente o estado da conta autenticada. Para contas novas
+      // ainda não verificadas, isso garante a tela "Aguardando confirmação"
+      // mesmo enquanto o documento do Firestore está sendo preparado.
+      state.currentUser = buildPendingProfileFromAuth(firebaseUser);
+      updateAccessState();
+      renderAll();
+
+      if (!firebaseUser.emailVerified) {
+        setFirebaseStatus(
+          "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
+          "pending"
+        );
+        setView("profile");
+      }
+
       try {
         await ensureUserDocument(firebaseUser);
         startUserListener(firebaseUser);
@@ -7023,7 +7163,16 @@ if (LOCAL_MODE) {
         }
       } catch (error) {
         console.error("Erro ao preparar perfil:", error);
-        setFirebaseStatus("Não foi possível preparar o perfil do usuário.", "error");
+
+        if (!firebaseUser.emailVerified) {
+          setFirebaseStatus(
+            "Conta criada. O e-mail ainda precisa ser confirmado. O perfil será sincronizado novamente no próximo acesso.",
+            "pending"
+          );
+          setView("profile");
+        } else {
+          setFirebaseStatus("Não foi possível preparar o perfil do usuário.", "error");
+        }
       }
     });
   } catch (error) {
