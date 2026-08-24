@@ -2348,6 +2348,8 @@ const state = {
   registrationInProgress: false,
   pendingRegistrationName: "",
   pendingRegistrationRole: "",
+  firebaseAccessRecoveryInProgress: false,
+  firebaseAccessRecoveryAttempted: false,
   eventsLoaded: false,
   tavolaLoaded: false,
   lastAccessSignature: "",
@@ -3576,6 +3578,7 @@ function startUserListener(firebaseUser) {
 
       if (signature !== state.lastAccessSignature) {
         state.lastAccessSignature = signature;
+        state.firebaseAccessRecoveryAttempted = false;
         startPrivateDataListeners();
       }
 
@@ -3586,6 +3589,92 @@ function startUserListener(firebaseUser) {
       console.error("Erro ao carregar perfil:", error);
       setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
     }
+  );
+}
+
+
+async function recoverFirebaseOperatorAccess() {
+  if (
+    LOCAL_MODE ||
+    !auth?.currentUser ||
+    state.firebaseAccessRecoveryInProgress ||
+    state.firebaseAccessRecoveryAttempted
+  ) {
+    return false;
+  }
+
+  state.firebaseAccessRecoveryInProgress = true;
+  state.firebaseAccessRecoveryAttempted = true;
+
+  try {
+    const firebaseUser = auth.currentUser;
+
+    await reload(firebaseUser);
+    await getIdToken(firebaseUser, true);
+    state.authUser = firebaseUser;
+
+    const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
+    if (!userSnapshot.exists()) return false;
+
+    state.currentUser = normalizeUserSnapshot(userSnapshot);
+    state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+
+    updateAccessState();
+    renderAll();
+
+    if (!firebaseUser.emailVerified) {
+      setFirebaseStatus(
+        "A permissão pode estar concedida, mas o e-mail institucional ainda precisa ser confirmado.",
+        "pending"
+      );
+      return false;
+    }
+
+    if (!state.currentUser.canManageCollection &&
+        state.currentUser.role !== "Administrador" &&
+        state.currentUser.role !== "Bibliotecário") {
+      setFirebaseStatus(
+        "A conta está atualizada, mas ainda não possui permissão de operador.",
+        "pending"
+      );
+      return false;
+    }
+
+    stopPrivateListeners();
+    startPrivateDataListeners();
+    setFirebaseStatus("Acesso do operador sincronizado com o Firebase.", "ready");
+    return true;
+  } catch (error) {
+    console.warn("Não foi possível renovar o acesso do operador:", error);
+    return false;
+  } finally {
+    state.firebaseAccessRecoveryInProgress = false;
+  }
+}
+
+function handlePrivateListenerError(label, error) {
+  console.error(`Erro ao carregar ${label}:`, error);
+
+  if (error?.code === "permission-denied" && canOperateLibrary()) {
+    setFirebaseStatus(
+      "Atualizando a autorização do aluno operador no Firebase...",
+      "pending"
+    );
+
+    recoverFirebaseOperatorAccess().then(recovered => {
+      if (!recovered) {
+        setFirebaseStatus(
+          "O Firebase ainda não reconheceu o acesso de operador. Confira se o e-mail está confirmado e atualize o acesso no Perfil.",
+          "error"
+        );
+      }
+    });
+    return;
+  }
+
+  setFirebaseStatus(
+    `Erro ao sincronizar ${label}. Confira as regras do Firestore.`,
+    "error"
   );
 }
 
@@ -3620,8 +3709,7 @@ function startPrivateDataListeners() {
         renderAll();
       },
       error => {
-        console.error("Erro ao carregar empréstimos:", error);
-        setFirebaseStatus("Erro ao sincronizar empréstimos. Confira as regras do Firestore.", "error");
+        handlePrivateListenerError("empréstimos", error);
       }
     );
   }
@@ -3642,8 +3730,7 @@ function startPrivateDataListeners() {
         renderAll();
       },
       error => {
-        console.error("Erro ao carregar reservas:", error);
-        setFirebaseStatus("Erro ao sincronizar reservas. Confira as regras do Firestore.", "error");
+        handlePrivateListenerError("reservas", error);
       }
     );
   }
@@ -4602,6 +4689,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigida a sincronização do token do Firebase antes de liberar as funções de aluno operador.</li>
+        <li>Quando o Firestore devolve bloqueio de permissão para um operador autorizado, o TechLib agora tenta renovar a autorização automaticamente.</li>
         <li>Adicionado “Atualizar meu acesso” para o aluno recarregar imediatamente permissões, confirmação de e-mail e perfil do Firestore.</li>
         <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
         <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
@@ -5438,7 +5527,7 @@ function mapFirebaseError(error) {
     "auth/network-request-failed": "Falha de conexão com a internet.",
     "auth/requires-recent-login": "Por segurança, entre novamente na conta e tente alterar o e-mail.",
     "auth/invalid-new-email": "O novo e-mail informado é inválido.",
-    "permission-denied": "A operação foi bloqueada pelas regras do Firebase."
+    "permission-denied": "O Firebase ainda não reconheceu esta autorização. Use “Atualizar meu acesso” no Perfil e confirme que o e-mail institucional está validado."
   };
   return messages[error?.code] || error?.message || "Não foi possível concluir a operação.";
 }
@@ -5461,6 +5550,7 @@ window.refreshMyAccess = async function() {
     await reload(firebaseUser);
     await getIdToken(firebaseUser, true);
     state.authUser = firebaseUser;
+    state.firebaseAccessRecoveryAttempted = false;
 
     // Garante que o perfil exista e busca diretamente a versão mais recente
     // do documento users, sem depender apenas do listener em tempo real.
@@ -7504,8 +7594,19 @@ if (LOCAL_MODE) {
         setView("profile");
       }
 
-      // Começa a acompanhar o documento imediatamente. Se ele já existir,
-      // o perfil carrega mesmo que uma tentativa de correção de nome falhe.
+      // Antes de iniciar funções protegidas, força o Firebase Authentication
+      // a emitir um token atualizado. Isso mantém emailVerified e as regras
+      // do Firestore sincronizados com o estado atual da conta.
+      try {
+        await reload(firebaseUser);
+        await getIdToken(firebaseUser, true);
+        state.authUser = firebaseUser;
+        state.firebaseAccessRecoveryAttempted = false;
+      } catch (tokenError) {
+        console.warn("Não foi possível renovar imediatamente o token:", tokenError);
+      }
+
+      // Depois do token atualizado, acompanha o perfil e suas permissões.
       startUserListener(firebaseUser);
 
       try {
