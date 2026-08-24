@@ -2345,6 +2345,9 @@ const state = {
   bookImportBusy: false,
   bookImportMessage: "",
   profileEditOpen: false,
+  registrationInProgress: false,
+  pendingRegistrationName: "",
+  pendingRegistrationRole: "",
   eventsLoaded: false,
   tavolaLoaded: false,
   lastAccessSignature: "",
@@ -3472,14 +3475,31 @@ function buildPendingProfileFromAuth(firebaseUser, preferredRole = null, preferr
   };
 }
 
-async function ensureUserDocument(firebaseUser) {
+async function ensureUserDocument(
+  firebaseUser,
+  preferredName = "",
+  preferredRole = ""
+) {
   const userRef = doc(db, "users", firebaseUser.uid);
   const snapshot = await getDoc(userRef);
+
+  const email = String(firebaseUser.email || "").toLowerCase();
+  const emailPrefix = email.split("@")[0];
+  const authName = String(
+    preferredName ||
+    firebaseUser.displayName ||
+    ""
+  ).trim();
+
+  const detectedRole = preferredRole || (
+    email.endsWith(`@${ROLE_DOMAINS.Professor}`)
+      ? "Professor"
+      : "Aluno"
+  );
 
   if (snapshot.exists()) {
     const data = snapshot.data();
     const storedName = String(data.name || "").trim();
-    const authName = String(firebaseUser.displayName || "").trim();
 
     if (
       authName &&
@@ -3487,8 +3507,10 @@ async function ensureUserDocument(firebaseUser) {
         !storedName ||
         storedName.toLowerCase() === "usuário" ||
         storedName.toLowerCase() === "usuario" ||
-        storedName === String(firebaseUser.email || "").split("@")[0]
-      )
+        storedName === emailPrefix ||
+        /^\d+$/.test(storedName)
+      ) &&
+      storedName !== authName
     ) {
       await updateDoc(userRef, {
         name: authName,
@@ -3499,15 +3521,11 @@ async function ensureUserDocument(firebaseUser) {
     return;
   }
 
-  const baseRole = firebaseUser.email?.endsWith(`@${ROLE_DOMAINS.Professor}`)
-    ? "Professor"
-    : "Aluno";
-
   await setDoc(userRef, {
-    name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-    email: String(firebaseUser.email || "").toLowerCase(),
-    baseRole,
-    role: baseRole,
+    name: authName || "",
+    email,
+    baseRole: detectedRole,
+    role: detectedRole,
     canManageCollection: false,
     isActive: true,
     createdAt: serverTimestamp(),
@@ -4549,6 +4567,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigido o salvamento do nome completo no cadastro, evitando que a matrícula do e-mail seja gravada como nome por causa da sincronização antecipada.</li>
         <li>Cadastros antigos sem nome válido agora exibem “Nome ainda não informado” e solicitam ao aluno que complete o nome no Perfil.</li>
         <li>Corrigida a exibição dos nomes dos alunos sincronizados na Gestão, com recuperação automática do nome quando disponível no Firebase.</li>
         <li>Corrigida a sincronização entre contas de alunos do Firebase Authentication e os perfis da coleção users no Firestore.</li>
@@ -7142,10 +7161,17 @@ elements.authForm.addEventListener("submit", async event => {
   if (password !== confirmation) return setAuthMessage("As senhas não coincidem.", "error");
 
   let credential = null;
+  const registrationRole = state.selectedRole;
 
   try {
     elements.authSubmitButton.disabled = true;
     setAuthMessage("Criando conta...", "");
+
+    // Evita que onAuthStateChanged crie o documento users antes de o nome
+    // completo estar sincronizado no Firebase Authentication.
+    state.registrationInProgress = true;
+    state.pendingRegistrationName = name;
+    state.pendingRegistrationRole = registrationRole;
 
     // Primeira etapa: cria a conta no Firebase Authentication.
     credential = await createUserWithEmailAndPassword(auth, email, password);
@@ -7155,7 +7181,7 @@ elements.authForm.addEventListener("submit", async event => {
     state.authUser = credential.user;
     state.currentUser = buildPendingProfileFromAuth(
       credential.user,
-      state.selectedRole,
+      registrationRole,
       name
     );
 
@@ -7181,8 +7207,8 @@ elements.authForm.addEventListener("submit", async event => {
       await setDoc(doc(db, "users", credential.user.uid), {
         name,
         email,
-        baseRole: state.selectedRole,
-        role: state.selectedRole,
+        baseRole: registrationRole,
+        role: registrationRole,
         canManageCollection: false,
         isActive: true,
         createdAt: serverTimestamp(),
@@ -7193,12 +7219,23 @@ elements.authForm.addEventListener("submit", async event => {
 
       setTimeout(async () => {
         try {
-          await ensureUserDocument(credential.user);
+          await ensureUserDocument(
+            credential.user,
+            name,
+            registrationRole
+          );
         } catch (retryError) {
           console.warn("Nova tentativa de sincronização do perfil:", retryError);
         }
       }, 1500);
     }
+
+    state.registrationInProgress = false;
+    state.pendingRegistrationName = "";
+    state.pendingRegistrationRole = "";
+
+    // Agora o documento pode ser acompanhado normalmente.
+    startUserListener(credential.user);
 
     closeAuth();
     updateAccessState();
@@ -7225,6 +7262,11 @@ elements.authForm.addEventListener("submit", async event => {
     // não ocorreu nesta tentativa.
     setAuthMessage(mapFirebaseError(error), "error");
   } finally {
+    if (!credential) {
+      state.registrationInProgress = false;
+      state.pendingRegistrationName = "";
+      state.pendingRegistrationRole = "";
+    }
     elements.authSubmitButton.disabled = false;
   }
 });
@@ -7263,9 +7305,24 @@ if (LOCAL_MODE) {
         return;
       }
 
-      // Mostra imediatamente o estado da conta autenticada. Para contas novas
-      // ainda não verificadas, isso garante a tela "Aguardando confirmação"
-      // mesmo enquanto o documento do Firestore está sendo preparado.
+      // Durante um cadastro recém-iniciado, o formulário ainda está
+      // sincronizando o nome no Authentication. Mostramos o estado pendente,
+      // mas NÃO criamos o documento users aqui para evitar salvar apenas
+      // o número/matrícula do e-mail como nome.
+      if (state.registrationInProgress) {
+        state.currentUser = buildPendingProfileFromAuth(
+          firebaseUser,
+          state.pendingRegistrationRole,
+          state.pendingRegistrationName
+        );
+        updateAccessState();
+        renderAll();
+        setView("profile");
+        return;
+      }
+
+      // Para logins normais, prepara o perfil existente e também repara
+      // automaticamente nomes antigos usando firebaseUser.displayName.
       state.currentUser = buildPendingProfileFromAuth(firebaseUser);
       updateAccessState();
       renderAll();
