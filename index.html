@@ -2304,10 +2304,8 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
-  getDocs,
   query,
   where,
-  limit,
   onSnapshot,
   serverTimestamp,
   Timestamp,
@@ -2411,8 +2409,6 @@ const state = {
   registrationInProgress: false,
   pendingRegistrationName: "",
   pendingRegistrationRole: "",
-  firebaseAccessRecoveryInProgress: false,
-  firebaseAccessRecoveryAttempted: false,
   eventsLoaded: false,
   tavolaLoaded: false,
   lastAccessSignature: "",
@@ -3641,7 +3637,6 @@ function startUserListener(firebaseUser) {
 
       if (signature !== state.lastAccessSignature) {
         state.lastAccessSignature = signature;
-        state.firebaseAccessRecoveryAttempted = false;
         startPrivateDataListeners();
       }
 
@@ -3657,87 +3652,19 @@ function startUserListener(firebaseUser) {
 }
 
 
-async function recoverFirebaseOperatorAccess() {
-  if (
-    LOCAL_MODE ||
-    !auth?.currentUser ||
-    state.firebaseAccessRecoveryInProgress ||
-    state.firebaseAccessRecoveryAttempted
-  ) {
-    return false;
-  }
-
-  state.firebaseAccessRecoveryInProgress = true;
-  state.firebaseAccessRecoveryAttempted = true;
-
-  try {
-    const firebaseUser = auth.currentUser;
-
-    await reload(firebaseUser);
-    await getIdToken(firebaseUser, true);
-    state.authUser = firebaseUser;
-
-    const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
-    if (!userSnapshot.exists()) return false;
-
-    state.currentUser = normalizeUserSnapshot(userSnapshot);
-    state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-
-    updateAccessState();
-    renderAll();
-
-    if (!firebaseUser.emailVerified) {
-      setFirebaseStatus(
-        "A permissão pode estar concedida, mas o e-mail institucional ainda precisa ser confirmado.",
-        "pending"
-      );
-      return false;
-    }
-
-    if (!state.currentUser.canManageCollection &&
-        state.currentUser.role !== "Administrador" &&
-        state.currentUser.role !== "Bibliotecário") {
-      setFirebaseStatus(
-        "A conta está atualizada, mas ainda não possui permissão de operador.",
-        "pending"
-      );
-      return false;
-    }
-
-    stopPrivateListeners();
-    startPrivateDataListeners();
-    setFirebaseStatus("Perfil do operador atualizado. Validando regras do Firestore...", "pending");
-    return true;
-  } catch (error) {
-    console.warn("Não foi possível renovar o acesso do operador:", error);
-    return false;
-  } finally {
-    state.firebaseAccessRecoveryInProgress = false;
-  }
-}
-
 function handlePrivateListenerError(label, error) {
   console.error(`Erro ao carregar ${label}:`, error);
 
-  if (error?.code === "permission-denied" && canOperateLibrary()) {
+  if (error?.code === "permission-denied") {
     setFirebaseStatus(
-      "Atualizando a autorização do aluno operador no Firebase...",
-      "pending"
+      `Acesso ao Firebase bloqueado ao carregar ${label}. Confira as permissões do perfil e as regras do Firestore.`,
+      "error"
     );
-
-    recoverFirebaseOperatorAccess().then(recovered => {
-      if (!recovered) {
-        setFirebaseStatus(
-          "O Firebase ainda não reconheceu o acesso de operador. Confira se o e-mail está confirmado e atualize o acesso no Perfil.",
-          "error"
-        );
-      }
-    });
     return;
   }
 
   setFirebaseStatus(
-    `Erro ao sincronizar ${label}. Confira as regras do Firestore.`,
+    `Erro ao sincronizar ${label}. Tente entrar novamente na conta.`,
     "error"
   );
 }
@@ -3750,10 +3677,11 @@ function startPrivateDataListeners() {
   }
 
   const user = state.currentUser;
-  if (!isActiveUser(user)) {
+  if (!isActiveUser(user) || !isVerifiedUser()) {
     renderAll();
     return;
   }
+
   const operate = canOperateLibrary(user);
 
   const loansSource = operate
@@ -4545,10 +4473,6 @@ function renderEmailVerificationWait() {
           Reenviar confirmação
         </button>
 
-        <button class="secondary-button" type="button" onclick="refreshMyAccess()">
-          Atualizar meu acesso
-        </button>
-
         <button class="secondary-button" type="button" onclick="simulatePasswordReset()">
           Alterar ou recuperar senha
         </button>
@@ -4720,20 +4644,6 @@ function renderProfile() {
         <span class="chevron">›</span>
       </button>
 
-      ${state.currentUser.baseRole === "Aluno" ? `
-        <button class="option-card" onclick="refreshMyAccess()">
-          <span class="option-icon">↻</span>
-          <span>
-            <strong>Atualizar meu acesso</strong>
-            <span>
-              ${state.currentUser.canManageCollection
-                ? "Permissão de aluno operador ativa. Atualize para recarregar as funções."
-                : "Recarregar permissões e situação da conta."}
-            </span>
-          </span>
-          <span class="chevron">›</span>
-        </button>
-      ` : ""}
 
       <button class="option-card" onclick="simulatePasswordReset()">
         <span class="option-icon">⌘</span>
@@ -4754,14 +4664,13 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
+        <li>Removido o botão “Atualizar meu acesso” e as tentativas automáticas de recuperação que repetiam consultas bloqueadas.</li>
+        <li>Ao entrar na conta, o perfil real é carregado antes das funções privadas; se canManageCollection estiver ativo, as funções de operador são liberadas automaticamente.</li>
         <li>Corrigidas as regras de leitura do aluno operador para aceitar perfis antigos com campos opcionais ausentes e liberar explicitamente a listagem de empréstimos e reservas.</li>
         <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
         <li>Simplificada a regra do aluno operador para reconhecer diretamente canManageCollection no perfil autorizado pela Gestão.</li>
         <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
-        <li>Revisada a autorização do aluno operador: o TechLib agora testa diretamente as regras do Firestore e informa se a permissão, o e-mail, o perfil ou as regras publicadas estão bloqueando o acesso.</li>
-        <li>Corrigida a sincronização do token do Firebase antes de liberar as funções de aluno operador.</li>
-        <li>Quando o Firestore devolve bloqueio de permissão para um operador autorizado, o TechLib agora tenta renovar a autorização automaticamente.</li>
-        <li>Adicionado “Atualizar meu acesso” para o aluno recarregar imediatamente permissões, confirmação de e-mail e perfil do Firestore.</li>
         <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
         <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
         <li>Administrador agora pode corrigir o nome de cadastros antigos diretamente na Gestão, sem excluir a conta do aluno.</li>
@@ -5603,144 +5512,13 @@ function mapFirebaseError(error) {
     "auth/network-request-failed": "Falha de conexão com a internet.",
     "auth/requires-recent-login": "Por segurança, entre novamente na conta e tente alterar o e-mail.",
     "auth/invalid-new-email": "O novo e-mail informado é inválido.",
-    "permission-denied": "A operação foi bloqueada pelas regras do Firestore. Use “Atualizar meu acesso” no Perfil para verificar qual requisito está pendente."
+    "permission-denied": "A operação foi bloqueada pelas regras do Firestore. Se sua permissão acabou de ser alterada, saia e entre novamente. Se o bloqueio continuar, confira as regras do Firestore."
   };
   return messages[error?.code] || error?.message || "Não foi possível concluir a operação.";
 }
 
 window.openAuth = openAuth;
 window.setView = setView;
-
-window.refreshMyAccess = async function() {
-  if (LOCAL_MODE || !ensureFirebaseReady()) return;
-
-  const firebaseUser = auth?.currentUser || state.authUser;
-  if (!firebaseUser) {
-    alert("Entre novamente na conta para atualizar o acesso.");
-    return;
-  }
-
-  const viewBeforeRefresh = state.currentView || "profile";
-
-  try {
-    setFirebaseStatus("Atualizando situação da conta...", "pending");
-
-    await reload(firebaseUser);
-    await getIdToken(firebaseUser, true);
-    state.authUser = firebaseUser;
-    state.firebaseAccessRecoveryAttempted = false;
-
-    await ensureUserDocument(firebaseUser);
-
-    const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
-    if (!userSnapshot.exists()) {
-      throw new Error("Perfil do usuário não encontrado no Firestore.");
-    }
-
-    const rawProfile = userSnapshot.data();
-    state.currentUser = normalizeUserSnapshot(userSnapshot);
-    state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-
-    const verified = Boolean(firebaseUser.emailVerified);
-    const active = state.currentUser.isActive !== false;
-    const operator =
-      state.currentUser.canManageCollection === true ||
-      state.currentUser.role === "Administrador" ||
-      state.currentUser.role === "Bibliotecário";
-
-    updateAccessState();
-    renderAll();
-    setView(viewBeforeRefresh);
-
-    if (!verified) {
-      setFirebaseStatus(
-        "A conta está conectada, mas o e-mail institucional ainda precisa ser confirmado.",
-        "pending"
-      );
-      alert(
-        "Permissão de operador no perfil: " + (operator ? "SIM" : "NÃO") +
-        "\nE-mail confirmado: NÃO" +
-        "\nPerfil ativo: " + (active ? "SIM" : "NÃO") +
-        "\n\nConfirme o e-mail institucional para liberar as funções protegidas."
-      );
-      return;
-    }
-
-    if (!active) {
-      setFirebaseStatus("O perfil está desativado.", "error");
-      alert(
-        "Permissão de operador no perfil: " + (operator ? "SIM" : "NÃO") +
-        "\nE-mail confirmado: SIM" +
-        "\nPerfil ativo: NÃO" +
-        "\n\nO perfil precisa ser reativado pela administração."
-      );
-      return;
-    }
-
-    if (!operator) {
-      setFirebaseStatus("A conta ainda não possui permissão de aluno operador.", "pending");
-      alert(
-        "Permissão de operador no perfil: NÃO" +
-        "\nE-mail confirmado: SIM" +
-        "\nPerfil ativo: SIM" +
-        "\n\nA administração ainda precisa conceder acesso de aluno operador."
-      );
-      return;
-    }
-
-    // Testa uma leitura que só é permitida ao próprio usuário envolvido
-    // ou a operadores. Como o operador consulta a coleção inteira,
-    // este teste confirma se as regras publicadas reconheceram a permissão.
-    try {
-      await getDocs(query(collection(db, "loans"), limit(1)));
-    } catch (permissionError) {
-      if (permissionError?.code === "permission-denied") {
-        setFirebaseStatus(
-          "Permissão registrada no perfil, mas bloqueada pelas regras publicadas do Firestore.",
-          "error"
-        );
-        alert(
-          "Permissão de operador interpretada pelo TechLib: " + (operator ? "SIM" : "NÃO") +
-          "\nE-mail confirmado: " + (verified ? "SIM" : "NÃO") +
-          "\nPerfil ativo: " + (active ? "SIM" : "NÃO") +
-          "\nFirestore: BLOQUEADO" +
-          "\n\nDADOS BRUTOS DO FIRESTORE:" +
-          "\nrole = " + String(rawProfile.role ?? "não informado") +
-          "\nisActive = " + String(rawProfile.isActive ?? "não informado") +
-          "\ncanManageCollection = " + String(rawProfile.canManageCollection ?? "não informado") +
-          "\ntipo de canManageCollection = " + typeof rawProfile.canManageCollection +
-          "\nuid = " + String(firebaseUser.uid) +
-          "\nprojeto = techlib-e308a" +
-          "\n\nSe canManageCollection não aparecer como true e tipo boolean, a permissão não está gravada corretamente. Se aparecer true/boolean e continuar bloqueado, então o problema está exclusivamente nas regras publicadas."
-        );
-        return;
-      }
-      throw permissionError;
-    }
-
-    state.lastAccessSignature = "";
-    stopPrivateListeners();
-    startUserListener(firebaseUser);
-    startPrivateDataListeners();
-
-    updateAccessState();
-    renderAll();
-    setView(viewBeforeRefresh);
-
-    setFirebaseStatus("Acesso de aluno operador reconhecido pelo Firebase.", "ready");
-    alert(
-      "Permissão de operador no perfil: SIM" +
-      "\nE-mail confirmado: SIM" +
-      "\nPerfil ativo: SIM" +
-      "\nFirestore: LIBERADO" +
-      "\n\nAs funções de aluno operador estão disponíveis."
-    );
-  } catch (error) {
-    console.error("Erro ao atualizar acesso:", error);
-    setFirebaseStatus("Não foi possível atualizar o acesso da conta.", "error");
-    alert(mapFirebaseError(error));
-  }
-};
 
 window.openProfileEdit = function() {
   if (!state.currentUser || !isActiveUser()) return;
@@ -7255,8 +7033,8 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
 
     alert(
       grant
-        ? "Acesso de aluno operador concedido. Na conta do aluno, use “Atualizar meu acesso”. Se o e-mail ainda não estiver confirmado, as funções permanecerão bloqueadas até a confirmação."
-        : "Acesso de aluno operador removido."
+        ? "Acesso de aluno operador concedido. A permissão será carregada automaticamente na conta do aluno. Se ele estiver desconectado, basta entrar novamente."
+        : "Acesso de aluno operador removido. A alteração será aplicada automaticamente."
     );
   } catch (error) {
     console.error(error);
@@ -7707,9 +7485,7 @@ if (LOCAL_MODE) {
       }
 
       // Durante um cadastro recém-iniciado, o formulário ainda está
-      // sincronizando o nome no Authentication. Mostramos o estado pendente,
-      // mas NÃO criamos o documento users aqui para evitar salvar apenas
-      // o número/matrícula do e-mail como nome.
+      // sincronizando nome e perfil. Não criamos outro documento aqui.
       if (state.registrationInProgress) {
         state.currentUser = buildPendingProfileFromAuth(
           firebaseUser,
@@ -7722,61 +7498,87 @@ if (LOCAL_MODE) {
         return;
       }
 
-      // Para logins normais, prepara o perfil existente e também repara
-      // automaticamente nomes antigos usando firebaseUser.displayName.
-      state.currentUser = buildPendingProfileFromAuth(firebaseUser);
-      updateAccessState();
-      renderAll();
+      setFirebaseStatus("Carregando perfil e permissões da conta...", "pending");
 
-      if (!firebaseUser.emailVerified) {
-        setFirebaseStatus(
-          "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
-          "pending"
-        );
-        setView("profile");
-      }
-
-      // Antes de iniciar funções protegidas, força o Firebase Authentication
-      // a emitir um token atualizado. Isso mantém emailVerified e as regras
-      // do Firestore sincronizados com o estado atual da conta.
       try {
+        // Atualiza o estado do Authentication, principalmente emailVerified.
         await reload(firebaseUser);
         await getIdToken(firebaseUser, true);
         state.authUser = firebaseUser;
-        state.firebaseAccessRecoveryAttempted = false;
-      } catch (tokenError) {
-        console.warn("Não foi possível renovar imediatamente o token:", tokenError);
-      }
 
-      // Depois do token atualizado, acompanha o perfil e suas permissões.
-      startUserListener(firebaseUser);
-
-      try {
+        // Garante que a conta possua o documento users/{uid}.
         await ensureUserDocument(firebaseUser);
 
+        // O perfil real do Firestore é a fonte da permissão operacional.
+        const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
+        if (!userSnapshot.exists()) {
+          throw new Error("Perfil do usuário não encontrado no Firestore.");
+        }
+
+        state.currentUser = normalizeUserSnapshot(userSnapshot);
+        state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+
+        if (!isActualAdministrator(state.currentUser)) {
+          state.adminViewRole = "";
+          sessionStorage.removeItem("techlibAdminViewRole");
+        } else if (!ADMIN_VIEW_ROLES.includes(state.adminViewRole)) {
+          state.adminViewRole = "Administrador";
+          sessionStorage.setItem("techlibAdminViewRole", "Administrador");
+        }
+
+        updateAccessState();
+        renderAll();
+
+        if (!state.currentUser.isActive) {
+          setFirebaseStatus(
+            "Perfil desativado. Procure a administração ou a biblioteca.",
+            "error"
+          );
+          setView("profile");
+        } else if (!firebaseUser.emailVerified) {
+          setFirebaseStatus(
+            "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
+            "pending"
+          );
+          setView("profile");
+        } else if (canOperateLibrary(state.currentUser)) {
+          setFirebaseStatus(
+            state.currentUser.role === "Aluno"
+              ? "Conta conectada. Acesso de aluno operador carregado."
+              : "Conta conectada. Acesso administrativo carregado.",
+            "ready"
+          );
+        } else {
+          setFirebaseStatus("Conta conectada ao TechLib.", "ready");
+        }
+
+        // O listener mantém role, canManageCollection e isActive sincronizados.
+        // Se a Gestão conceder ou remover a permissão enquanto o aluno estiver
+        // conectado, a interface é atualizada automaticamente.
+        startUserListener(firebaseUser);
+
         if (firebaseUser.emailVerified) {
-          setTimeout(async () => {
-            try {
-              await reload(firebaseUser);
-              await getIdToken(firebaseUser, true);
-              state.authUser = firebaseUser;
-              await syncAuthenticatedEmailToProfile(firebaseUser);
-            } catch (syncError) {
-              console.warn("Sincronização de e-mail pendente:", syncError);
-            }
-          }, 700);
+          try {
+            await syncAuthenticatedEmailToProfile(firebaseUser);
+          } catch (syncError) {
+            console.warn("Sincronização de e-mail pendente:", syncError);
+          }
         }
       } catch (error) {
-        console.warn("Perfil autenticado, mas houve uma pendência de sincronização:", error);
+        console.error("Erro ao preparar a conta autenticada:", error);
 
+        // Mantém ao menos os dados básicos da sessão visíveis para permitir
+        // sair da conta, confirmar e-mail ou tentar novamente pelo próximo login.
+        state.currentUser = buildPendingProfileFromAuth(firebaseUser);
+        state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+
+        updateAccessState();
+        renderAll();
+        setView("profile");
         setFirebaseStatus(
-          firebaseUser.emailVerified
-            ? "Conta conectada. Algumas informações do perfil ainda estão sendo sincronizadas."
-            : "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
-          "pending"
+          "Não foi possível carregar completamente o perfil da conta.",
+          "error"
         );
-
-        if (!firebaseUser.emailVerified) setView("profile");
       }
     });
   } catch (error) {
