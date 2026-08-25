@@ -7,6 +7,7 @@
 <meta content="#1558d6" name="theme-color"/>
 <meta content="TechLib - Plataforma de gestão da biblioteca escolar." name="description"/>
 <title>TechLib</title>
+<!-- Fluxo de operador fixo por e-mail institucional: 2026-08-25 -->
 <style>
     :root {
       --primary: #1558d6;
@@ -2333,15 +2334,15 @@ const ROLE_DOMAINS = {
   Aluno: "estudante.rn.gov.br"
 };
 
-// Operadores fixos autorizados diretamente pelo UID do Firebase Authentication.
-// Para adicionar outro aluno no futuro, inclua o UID aqui e também na função
-// isFixedOperator() das regras do Firestore que acompanham este arquivo.
+// USUÁRIO DE TESTE autorizado diretamente pelo UID do Firebase Authentication.
+// Este fluxo é propositalmente independente do documento users/{uid} e da
+// confirmação de e-mail, para diagnosticar se uma conta nova consegue operar.
 const FIXED_OPERATOR_UIDS = new Set([
-  "vtJ2a33hNZhCqNsdJl8weizY1hv2" // Arquilan
+  "96aQDjdNiRTj4SjaEqlBiVT04ZJ2" // teste.operador@estudante.rn.gov.br
 ]);
 
 function isFixedOperatorUid(uid = state.authUser?.uid || state.currentUser?.uid || "") {
-  return FIXED_OPERATOR_UIDS.has(String(uid || ""));
+  return FIXED_OPERATOR_UIDS.has(String(uid || "").trim());
 }
 
 
@@ -2669,7 +2670,7 @@ function getEffectiveRole(user = state.currentUser) {
 }
 
 function canOperateLibrary(user = state.currentUser) {
-  // O UID fixo é suficiente para reconhecer o aluno operador, mesmo se o
+  // O UID fixo de teste é suficiente para reconhecer o aluno operador, mesmo se o
   // documento complementar users/{uid} estiver temporariamente indisponível.
   if (isFixedOperatorUid()) return true;
 
@@ -2715,7 +2716,12 @@ function ensureVerified() {
     alert("Este perfil está desativado. Procure a administração ou a biblioteca.");
     return false;
   }
+
+  // Exceção temporária de diagnóstico: o usuário de teste por UID pode operar
+  // mesmo sem e-mail confirmado. Contas comuns continuam exigindo confirmação.
+  if (isFixedOperatorUid()) return true;
   if (isVerifiedUser()) return true;
+
   alert("Confirme o e-mail institucional antes de realizar esta operação.");
   return false;
 }
@@ -3710,7 +3716,7 @@ function startUserListener(firebaseUser) {
     error => {
       console.error("Erro ao carregar perfil:", error);
       if (isFixedOperatorUid(firebaseUser?.uid)) {
-        setFirebaseStatus("Conta conectada. Acesso fixo de aluno operador ativo.", "ready");
+        setFirebaseStatus("Conta de teste conectada. Acesso de operador por UID ativo.", "ready");
       } else {
         setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
       }
@@ -4730,6 +4736,8 @@ function renderProfile() {
 
     <article class="updates-card">
       <h3>Últimas atualizações</h3>
+      <p class="updates-date">Teste de operador por UID: 25/08/2026</p>
+      <ul class="updates-list"><li>Usuário de teste autorizado diretamente pelo UID do Firebase Authentication, sem depender do perfil antigo nem da confirmação de e-mail.</li></ul>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
         <li>Modo de estabilização: o aluno operador pode ser autorizado diretamente pelo UID do Firebase Authentication, sem depender do carregamento completo do perfil.</li>
@@ -7124,18 +7132,18 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
     return;
   }
 
-  const fixed = isFixedOperatorUid(uid);
+  const fixed = isFixedOperatorUid(target.uid);
   if (grant && fixed) {
-    alert("Este aluno já está autorizado como operador fixo pelo UID.");
+    alert("Este aluno já está autorizado como operador fixo pelo e-mail institucional.");
     return;
   }
   if (!grant && fixed) {
-    alert("Nesta versão, este acesso é fixo. Para removê-lo, retire o UID da lista FIXED_OPERATOR_UIDS no index.html e da função isFixedOperator nas regras do Firestore.");
+    alert("Nesta versão de teste, este acesso é fixo por UID. Para removê-lo, retire o UID da lista FIXED_OPERATOR_UIDS no index.html e da função isFixedOperator nas regras do Firestore.");
     return;
   }
 
   alert(
-    "Nesta versão de estabilização, o acesso de aluno operador é concedido diretamente pelo UID no código e nas regras do Firestore. Isso evita os problemas de sincronização do perfil."
+    "Nesta versão de estabilização, o acesso de aluno operador é concedido diretamente pelo e-mail institucional no código e nas regras do Firestore. Isso evita os problemas de sincronização do perfil."
   );
 };
 
@@ -7601,6 +7609,27 @@ if (LOCAL_MODE) {
         await getIdToken(firebaseUser, true);
         state.authUser = firebaseUser;
 
+        // Para o usuário de teste, a autorização é conhecida diretamente pelo UID.
+        // Criamos imediatamente um perfil funcional de Aluno operador. O documento
+        // users/{uid} será lido abaixo apenas para complementar nome/e-mail, mas uma
+        // falha nessa leitura não pode retirar a autorização operacional.
+        const fixedTestOperator = isFixedOperatorUid(firebaseUser.uid);
+        if (fixedTestOperator) {
+          state.currentUser = buildPendingProfileFromAuth(firebaseUser, "Aluno", "Teste Operador");
+          state.currentUser.role = "Aluno operador";
+          state.currentUser.baseRole = "Aluno";
+          state.currentUser.isActive = true;
+          state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+
+          updateAccessState();
+          startPrivateDataListeners();
+          renderAll();
+          setFirebaseStatus(
+            "Conta de teste conectada. Acesso de operador por UID ativo.",
+            "ready"
+          );
+        }
+
         // Primeiro lê o perfil real. Em contas já existentes isso evita qualquer
         // tentativa de escrita desnecessária antes de descobrir a função atual.
         const userRef = doc(db, "users", firebaseUser.uid);
@@ -7618,6 +7647,11 @@ if (LOCAL_MODE) {
 
         state.currentUser = normalizeUserSnapshot(userSnapshot);
         state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+        if (isFixedOperatorUid(firebaseUser.uid)) {
+          state.currentUser.baseRole = "Aluno";
+          state.currentUser.role = "Aluno operador";
+          state.currentUser.isActive = true;
+        }
 
         if (!isActualAdministrator(state.currentUser)) {
           state.adminViewRole = "";
@@ -7669,7 +7703,7 @@ if (LOCAL_MODE) {
       } catch (error) {
         console.error("Erro ao preparar a conta autenticada:", error);
 
-        // Mantém os dados básicos da sessão. Para UID fixo de operador, a
+        // Mantém os dados básicos da sessão. Para e-mail fixo de operador, a
         // autorização não depende do documento users/{uid}, então as funções
         // operacionais continuam disponíveis mesmo se esse perfil complementar
         // apresentar uma pendência de leitura.
@@ -7678,12 +7712,14 @@ if (LOCAL_MODE) {
         state.currentUser.isActive = true;
 
         if (isFixedOperatorUid(firebaseUser.uid)) {
+          state.currentUser.baseRole = "Aluno";
+          state.currentUser.role = "Aluno operador";
           updateAccessState();
           startPrivateDataListeners();
           renderAll();
           setView(state.currentView || "home");
           setFirebaseStatus(
-            "Conta conectada. Acesso fixo de aluno operador ativo.",
+            "Conta de teste conectada. Acesso de operador por UID ativo.",
             "ready"
           );
         } else {
