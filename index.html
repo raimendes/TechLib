@@ -2333,6 +2333,17 @@ const ROLE_DOMAINS = {
   Aluno: "estudante.rn.gov.br"
 };
 
+// Operadores fixos autorizados diretamente pelo UID do Firebase Authentication.
+// Para adicionar outro aluno no futuro, inclua o UID aqui e também na função
+// isFixedOperator() das regras do Firestore que acompanham este arquivo.
+const FIXED_OPERATOR_UIDS = new Set([
+  "vtJ2a33hNZhCqNsdJl8weizY1hv2" // Arquilan
+]);
+
+function isFixedOperatorUid(uid = state.authUser?.uid || state.currentUser?.uid || "") {
+  return FIXED_OPERATOR_UIDS.has(String(uid || ""));
+}
+
 
 const BOOK_CONDITIONS = [
   "Não informado",
@@ -2658,6 +2669,10 @@ function getEffectiveRole(user = state.currentUser) {
 }
 
 function canOperateLibrary(user = state.currentUser) {
+  // O UID fixo é suficiente para reconhecer o aluno operador, mesmo se o
+  // documento complementar users/{uid} estiver temporariamente indisponível.
+  if (isFixedOperatorUid()) return true;
+
   const effectiveUser = getEffectiveAccessUser(user);
   if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
 
@@ -3694,7 +3709,11 @@ function startUserListener(firebaseUser) {
     },
     error => {
       console.error("Erro ao carregar perfil:", error);
-      setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
+      if (isFixedOperatorUid(firebaseUser?.uid)) {
+        setFirebaseStatus("Conta conectada. Acesso fixo de aluno operador ativo.", "ready");
+      } else {
+        setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
+      }
     }
   );
 }
@@ -4612,12 +4631,12 @@ function renderProfile() {
           <span>${escapeHtml(state.currentUser.email)}</span>
         </div>
       </div>
-      <span class="account-tag">${escapeHtml(state.currentUser.role)}</span>
+      <span class="account-tag">${escapeHtml(isFixedOperatorUid() ? "Aluno operador" : state.currentUser.role)}</span>
       ${isActualAdministrator() && state.adminViewRole && state.adminViewRole !== "Administrador"
         ? `<span class="account-tag" style="margin-left:6px;">Visualizando como ${escapeHtml(state.adminViewRole)}</span>`
         : ""}
       <span class="account-tag" style="margin-left:6px;">${state.currentUser.emailVerified ? "E-mail confirmado" : "E-mail pendente"}</span>
-      ${state.currentUser.role === "Aluno operador"
+      ${canOperateLibrary() && isStudentUser()
         ? '<span class="account-tag" style="margin-left:6px;">Funções operacionais liberadas</span>'
         : ""}
     </article>
@@ -4713,6 +4732,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Modo de estabilização: o aluno operador pode ser autorizado diretamente pelo UID do Firebase Authentication, sem depender do carregamento completo do perfil.</li>
         <li>Aluno operador agora é um perfil real no campo role do usuário, sem coleção separada de autorizações.</li>
         <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
         <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
@@ -7096,13 +7116,7 @@ window.toggleUserActiveStatus = async function(uid, activate) {
 };
 
 window.toggleStudentCollectionPermission = async function(uid, grant) {
-  if (LOCAL_MODE) {
-    if (!ensureVerified() || !canManageUsers()) return;
-    localToggleStudentPermission(uid, grant);
-    return;
-  }
-
-  if (!ensureFirebaseReady() || !ensureVerified() || !canManageUsers()) return;
+  if (!canManageUsers()) return;
 
   const target = state.users.find(user => user.uid === uid);
   if (!target || target.baseRole !== "Aluno") {
@@ -7110,28 +7124,19 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
     return;
   }
 
-  if (grant && target.isActive === false) {
-    alert("Reative o perfil do aluno antes de conceder acesso de operador.");
+  const fixed = isFixedOperatorUid(uid);
+  if (grant && fixed) {
+    alert("Este aluno já está autorizado como operador fixo pelo UID.");
+    return;
+  }
+  if (!grant && fixed) {
+    alert("Nesta versão, este acesso é fixo. Para removê-lo, retire o UID da lista FIXED_OPERATOR_UIDS no index.html e da função isFixedOperator nas regras do Firestore.");
     return;
   }
 
-  try {
-    await updateDoc(doc(db, "users", uid), {
-      role: grant ? "Aluno operador" : "Aluno",
-      updatedAt: serverTimestamp()
-    });
-
-    state.studentPermissionSearch = "";
-
-    alert(
-      grant
-        ? "Perfil Aluno operador concedido. As funções serão liberadas automaticamente ao aluno."
-        : "Perfil de operador removido. O usuário voltou ao perfil Aluno."
-    );
-  } catch (error) {
-    console.error("Erro ao alterar o perfil de Aluno operador:", error);
-    alert(mapFirebaseError(error));
-  }
+  alert(
+    "Nesta versão de estabilização, o acesso de aluno operador é concedido diretamente pelo UID no código e nas regras do Firestore. Isso evita os problemas de sincronização do perfil."
+  );
 };
 
 window.changeStaffRole = async function(uid, role) {
@@ -7664,18 +7669,32 @@ if (LOCAL_MODE) {
       } catch (error) {
         console.error("Erro ao preparar a conta autenticada:", error);
 
-        // Mantém ao menos os dados básicos da sessão visíveis para permitir
-        // sair da conta, confirmar e-mail ou tentar novamente pelo próximo login.
+        // Mantém os dados básicos da sessão. Para UID fixo de operador, a
+        // autorização não depende do documento users/{uid}, então as funções
+        // operacionais continuam disponíveis mesmo se esse perfil complementar
+        // apresentar uma pendência de leitura.
         state.currentUser = buildPendingProfileFromAuth(firebaseUser);
         state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
+        state.currentUser.isActive = true;
 
-        updateAccessState();
-        renderAll();
-        setView("profile");
-        setFirebaseStatus(
-          "Não foi possível carregar completamente o perfil da conta.",
-          "error"
-        );
+        if (isFixedOperatorUid(firebaseUser.uid)) {
+          updateAccessState();
+          startPrivateDataListeners();
+          renderAll();
+          setView(state.currentView || "home");
+          setFirebaseStatus(
+            "Conta conectada. Acesso fixo de aluno operador ativo.",
+            "ready"
+          );
+        } else {
+          updateAccessState();
+          renderAll();
+          setView("profile");
+          setFirebaseStatus(
+            "Não foi possível carregar completamente o perfil da conta.",
+            "error"
+          );
+        }
       }
     });
   } catch (error) {
