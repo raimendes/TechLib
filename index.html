@@ -2641,7 +2641,7 @@ function getEffectiveRole(user = state.currentUser) {
 
 function canOperateLibrary(user = state.currentUser) {
   const effectiveUser = getEffectiveAccessUser(user);
-  if (!effectiveUser || !isActiveUser(effectiveUser) || !isVerifiedUser()) return false;
+  if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
   return (
     effectiveUser.role === "Administrador" ||
     effectiveUser.role === "Bibliotecário" ||
@@ -2651,9 +2651,23 @@ function canOperateLibrary(user = state.currentUser) {
 
 function canManageUsers(user = state.currentUser) {
   const effectiveUser = getEffectiveAccessUser(user);
-  return canOperateLibrary(user) && (
+  return canOperateLibrary(user) && isVerifiedUser() && (
     effectiveUser?.role === "Administrador" || effectiveUser?.role === "Bibliotecário"
   );
+}
+
+function ensureOperatorAccess() {
+  if (!state.currentUser) {
+    alert("Entre na conta para utilizar esta função.");
+    return false;
+  }
+  if (!isActiveUser()) {
+    alert("Este perfil está desativado. Procure a administração ou a biblioteca.");
+    return false;
+  }
+  if (canOperateLibrary()) return true;
+  alert("Você não possui permissão de aluno operador para utilizar esta função.");
+  return false;
 }
 
 function ensureVerified() {
@@ -3677,16 +3691,17 @@ function startPrivateDataListeners() {
   }
 
   const user = state.currentUser;
-  if (!isActiveUser(user) || !isVerifiedUser()) {
+  if (!isActiveUser(user)) {
     renderAll();
     return;
   }
 
   const operate = canOperateLibrary(user);
+  const verified = isVerifiedUser();
 
   const loansSource = operate
     ? collection(db, "loans")
-    : isStudentUser(user)
+    : verified && isStudentUser(user)
       ? query(collection(db, "loans"), where("studentUid", "==", user.uid))
       : null;
 
@@ -3709,7 +3724,7 @@ function startPrivateDataListeners() {
 
   const reservationsSource = operate
     ? collection(db, "reservations")
-    : isProfessorUser(user)
+    : verified && isProfessorUser(user)
       ? query(collection(db, "reservations"), where("teacherUid", "==", user.uid))
       : null;
 
@@ -4486,14 +4501,14 @@ function renderEmailVerificationWait() {
         <div class="pending-email-card" style="text-align:left;">
           <strong>Permissão de aluno operador já concedida</strong>
           <span>
-            Sua conta já recebeu acesso de operador, mas as funções de Gestão só serão liberadas
-            depois que o e-mail institucional estiver confirmado.
+            Sua conta já recebeu acesso de operador. Ao entrar novamente, as funções operacionais
+            de Gestão, Eventos e Távola são carregadas automaticamente.
           </span>
         </div>
       ` : ""}
 
       <p class="verification-wait-note">
-        Enquanto a confirmação estiver pendente, empréstimos, reservas e funções de gestão permanecem bloqueados.
+        Para alunos e professores comuns, empréstimos e reservas continuam dependendo da confirmação do e-mail. Alunos operadores autorizados pela Gestão recebem as funções operacionais ao entrar na conta.
       </p>
     </article>
   `;
@@ -4541,7 +4556,7 @@ function renderProfile() {
     return;
   }
 
-  if (!isVerifiedUser()) {
+  if (!isVerifiedUser() && !canOperateLibrary()) {
     elements.profileContent.innerHTML = renderEmailVerificationWait();
     return;
   }
@@ -5403,21 +5418,25 @@ function setView(viewName) {
 
 function updateAccessState() {
   const logged = Boolean(state.currentUser);
-  const verifiedAccess = logged && isActiveUser() && isVerifiedUser();
-  const movementAccess = verifiedAccess && (isStudentUser() || isProfessorUser());
+  const active = logged && isActiveUser();
+  const operatorAccess = active && canOperateLibrary();
+  const verifiedCommonAccess = active && isVerifiedUser();
+  const movementAccess = operatorAccess || (
+    verifiedCommonAccess && (isStudentUser() || isProfessorUser())
+  );
 
   elements.headerAccessButton.textContent = logged ? "Perfil" : "Entrar";
   elements.loansNavButton.classList.toggle("hidden", !movementAccess);
-  elements.managementNavButton.classList.toggle("hidden", !canOperateLibrary());
+  elements.managementNavButton.classList.toggle("hidden", !operatorAccess);
 
   if (elements.loansNavLabel) {
     elements.loansNavLabel.textContent = isProfessorUser() ? "Reservas" : "Empréstimos";
   }
 
   if (!movementAccess && state.currentView === "loans") setView(logged ? "profile" : "home");
-  if (!canOperateLibrary() && state.currentView === "management") setView(logged ? "profile" : "home");
+  if (!operatorAccess && state.currentView === "management") setView(logged ? "profile" : "home");
 
-  if (logged && !isVerifiedUser() && ["loans", "management"].includes(state.currentView)) {
+  if (logged && !isVerifiedUser() && !operatorAccess && ["loans", "management"].includes(state.currentView)) {
     setView("profile");
   }
 }
@@ -5695,11 +5714,11 @@ window.closeEventForm = function() {
 window.saveEvent = async function(event) {
   event.preventDefault();
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localSaveEvent(event);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   const form = event.currentTarget;
   const data = new FormData(form);
@@ -5752,11 +5771,11 @@ window.saveEvent = async function(event) {
 
 window.removeEvent = async function(eventId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRemoveEvent(eventId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   const record = state.events.find(item => item.id === eventId);
   if (!record) return;
   if (!confirm(`Excluir o evento "${record.title}"?`)) return;
@@ -5791,11 +5810,11 @@ window.closeTavolaForm = function() {
 window.saveTavolaRecord = async function(event) {
   event.preventDefault();
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localSaveTavolaRecord(event);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   const form = event.currentTarget;
   const data = new FormData(form);
@@ -5847,11 +5866,11 @@ window.saveTavolaRecord = async function(event) {
 
 window.removeTavolaRecord = async function(recordId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRemoveTavolaRecord(recordId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   const record = state.tavolaRecords.find(item => item.id === recordId);
   if (!record) return;
   if (!confirm(`Excluir o registro "${record.title}"?`)) return;
@@ -5968,7 +5987,7 @@ window.cancelBookImport = function() {
 };
 
 window.confirmBookImport = async function() {
-  if (!ensureVerified() || !canOperateLibrary() || state.bookImportBusy) return;
+  if (!ensureOperatorAccess() || state.bookImportBusy) return;
 
   const rows = (state.bookImportRows || []).filter(row => row.importable);
   if (!rows.length) {
@@ -6093,7 +6112,7 @@ window.confirmBookImport = async function() {
 
 
 window.generateCollectionReport = function() {
-  if (!ensureVerified() || !canOperateLibrary()) {
+  if (!ensureOperatorAccess()) {
     alert("Você não possui permissão para gerar relatórios do acervo.");
     return;
   }
@@ -6332,12 +6351,12 @@ window.generateCollectionReport = function() {
 window.saveBook = async function(event) {
   event.preventDefault();
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localSaveBook(event);
     return;
   }
 
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   const form = event.currentTarget;
   const data = new FormData(form);
@@ -6434,11 +6453,11 @@ window.saveBook = async function(event) {
 
 window.removeBook = async function(bookId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRemoveBook(bookId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   const book = state.books.find(item => item.id === bookId);
   if (!book) return;
 
@@ -6568,11 +6587,11 @@ window.cancelLoanRequest = async function(loanId) {
 
 window.confirmLoan = async function(loanId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localConfirmLoan(loanId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6625,11 +6644,11 @@ window.confirmLoan = async function(loanId) {
 
 window.rejectLoan = async function(loanId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRejectLoan(loanId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6670,11 +6689,11 @@ window.requestRenewal = async function(loanId) {
 
 window.confirmRenewal = async function(loanId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localConfirmRenewal(loanId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   try {
     const loanRef = doc(db, "loans", loanId);
     await runTransaction(db, async transaction => {
@@ -6703,11 +6722,11 @@ window.confirmRenewal = async function(loanId) {
 
 window.rejectRenewal = async function(loanId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRejectRenewal(loanId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   try {
     await updateDoc(doc(db, "loans", loanId), {
       renewalRequested: false,
@@ -6721,11 +6740,11 @@ window.rejectRenewal = async function(loanId) {
 
 window.returnLoan = async function(loanId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localReturnLoan(loanId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6827,11 +6846,11 @@ window.cancelReservation = async function(reservationId) {
 
 window.confirmReservation = async function(reservationId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localConfirmReservation(reservationId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
 
   try {
     const reservationRef = doc(db, "reservations", reservationId);
@@ -6871,11 +6890,11 @@ window.confirmReservation = async function(reservationId) {
 
 window.rejectReservation = async function(reservationId) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localRejectReservation(reservationId);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   try {
     const record = state.reservations.find(item => item.id === reservationId);
     if (!record || record.status !== "pending") return;
@@ -6891,11 +6910,11 @@ window.rejectReservation = async function(reservationId) {
 
 window.finishReservation = async function(reservationId, finalStatus) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || !canOperateLibrary()) return;
+    if (!ensureOperatorAccess()) return;
     localFinishReservation(reservationId, finalStatus);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
+  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
   if (!["completed", "cancelled"].includes(finalStatus)) return;
 
   try {
@@ -7535,19 +7554,19 @@ if (LOCAL_MODE) {
             "error"
           );
           setView("profile");
-        } else if (!firebaseUser.emailVerified) {
-          setFirebaseStatus(
-            "Conta conectada. Confirme o e-mail institucional para liberar as funções.",
-            "pending"
-          );
-          setView("profile");
         } else if (canOperateLibrary(state.currentUser)) {
           setFirebaseStatus(
             state.currentUser.role === "Aluno"
-              ? "Conta conectada. Acesso de aluno operador carregado."
+              ? "Conta conectada. Acesso de aluno operador carregado automaticamente."
               : "Conta conectada. Acesso administrativo carregado.",
             "ready"
           );
+        } else if (!firebaseUser.emailVerified) {
+          setFirebaseStatus(
+            "Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.",
+            "pending"
+          );
+          setView("profile");
         } else {
           setFirebaseStatus("Conta conectada ao TechLib.", "ready");
         }
