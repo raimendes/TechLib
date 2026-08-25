@@ -3741,6 +3741,7 @@ function startPrivateDataListeners() {
           snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
         );
         state.privateDataLoaded = true;
+        if (operate) setFirebaseStatus("Acesso de aluno operador ativo.", "ready");
         renderAll();
       },
       error => {
@@ -4724,6 +4725,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigidas as regras de leitura do aluno operador para aceitar perfis antigos com campos opcionais ausentes e liberar explicitamente a listagem de empréstimos e reservas.</li>
         <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
         <li>Simplificada a regra do aluno operador para reconhecer diretamente canManageCollection no perfil autorizado pela Gestão.</li>
         <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
@@ -5606,6 +5608,7 @@ window.refreshMyAccess = async function() {
       throw new Error("Perfil do usuário não encontrado no Firestore.");
     }
 
+    const rawProfile = userSnapshot.data();
     state.currentUser = normalizeUserSnapshot(userSnapshot);
     state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
 
@@ -5672,7 +5675,10 @@ window.refreshMyAccess = async function() {
           "\nE-mail confirmado: SIM" +
           "\nPerfil ativo: SIM" +
           "\nFirestore: BLOQUEADO" +
-          "\n\nA conta está correta. O bloqueio está nas regras publicadas do Firestore. Publique as regras corrigidas desta versão."
+          "\n\nCampos reais no perfil: role=" + String(rawProfile.role ?? "não informado") +
+          " | isActive=" + String(rawProfile.isActive ?? "não informado") +
+          " | canManageCollection=" + String(rawProfile.canManageCollection ?? "não informado") +
+          "\n\nAs regras desta versão aceitam perfis antigos mesmo quando role ou isActive não existiam no documento original."
         );
         return;
       }
