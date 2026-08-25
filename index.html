@@ -2679,6 +2679,38 @@ function getEffectiveRole(user = state.currentUser) {
   return getEffectiveAccessUser(user)?.role || "";
 }
 
+// Hierarquia consolidada de permissões do TechLib.
+// Administrador e Bibliotecário compartilham as funções operacionais da biblioteca.
+// Somente o Administrador pode definir perfis de Professor, Bibliotecário e Administrador.
+function isAdministratorRole(user = state.currentUser) {
+  const effectiveUser = getEffectiveAccessUser(user);
+  return Boolean(
+    effectiveUser &&
+    isActiveUser(effectiveUser) &&
+    effectiveUser.role === "Administrador"
+  );
+}
+
+function isLibrarianRole(user = state.currentUser) {
+  const effectiveUser = getEffectiveAccessUser(user);
+  return Boolean(
+    effectiveUser &&
+    isActiveUser(effectiveUser) &&
+    effectiveUser.role === "Bibliotecário"
+  );
+}
+
+function canManageStudentUsers(user = state.currentUser) {
+  return Boolean(
+    isVerifiedUser() &&
+    (isAdministratorRole(user) || isLibrarianRole(user))
+  );
+}
+
+function canManageStaffRoles(user = state.currentUser) {
+  return Boolean(isVerifiedUser() && isAdministratorRole(user));
+}
+
 function canOperateLibrary(user = state.currentUser) {
   // O UID fixo de teste é suficiente para reconhecer o aluno operador, mesmo se o
   // documento complementar users/{uid} estiver temporariamente indisponível.
@@ -2695,16 +2727,8 @@ function canOperateLibrary(user = state.currentUser) {
 }
 
 function canManageUsers(user = state.currentUser) {
-  const effectiveUser = getEffectiveAccessUser(user);
-  return Boolean(
-    effectiveUser &&
-    isActiveUser(effectiveUser) &&
-    isVerifiedUser() &&
-    (
-      effectiveUser.role === "Administrador" ||
-      effectiveUser.role === "Bibliotecário"
-    )
-  );
+  // Gestão de alunos e alunos operadores: Administrador e Bibliotecário.
+  return canManageStudentUsers(user);
 }
 
 function ensureOperatorAccess() {
@@ -4750,6 +4774,7 @@ function renderProfile() {
       <ul class="updates-list"><li>Usuário de teste autorizado diretamente pelo UID do Firebase Authentication, sem depender do perfil antigo nem da confirmação de e-mail.</li></ul>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Hierarquia de acesso consolidada: Administrador e Bibliotecário compartilham as funções operacionais da biblioteca e a gestão de alunos; somente o Administrador pode definir perfis de Bibliotecário e Administrador.</li>
         <li>Modo de estabilização: o aluno operador pode ser autorizado diretamente pelo UID do Firebase Authentication, sem depender do carregamento completo do perfil.</li>
         <li>Aluno operador agora é um perfil real no campo role do usuário, sem coleção separada de autorizações.</li>
         <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
@@ -5317,7 +5342,7 @@ function renderUserPermissionsCard() {
   return `
     <article class="management-card">
       <h3>Alunos operadores</h3>
-      <p>Pesquise alunos para conceder acesso de operador, remover permissões ou desativar e reativar perfis.</p>
+      <p>Administrador e Bibliotecário podem acompanhar alunos operadores e gerenciar a situação dos perfis de alunos. A forma definitiva de conceder e remover o acesso operacional será ajustada na próxima etapa.</p>
 
       <div class="permission-search-help" style="margin-top:8px;">
         ${students.length} ${students.length === 1 ? "aluno sincronizado" : "alunos sincronizados"} no TechLib.
@@ -5366,7 +5391,8 @@ function renderUserPermissionsCard() {
 }
 
 function renderAdminRolesCard() {
-  if (getEffectiveRole() !== "Administrador") return "";
+  // Alterações de perfis da equipe continuam exclusivas do Administrador.
+  if (!canManageStaffRoles()) return "";
 
   const staff = state.users
     .filter(user => user.baseRole === "Professor")
@@ -5412,7 +5438,7 @@ function renderAdminRolesCard() {
   return `
     <article class="management-card">
       <h3>Professores e perfis administrativos</h3>
-      <p>Todos os professores cadastrados aparecem aqui. Defina o perfil e a situação de acesso.</p>
+      <p>Área exclusiva do Administrador para definir Professor, Bibliotecário ou Administrador e controlar a situação desses perfis.</p>
       <div class="permission-list">${content}</div>
     </article>
   `;
@@ -7092,10 +7118,9 @@ window.toggleUserActiveStatus = async function(uid, activate) {
   const target = state.users.find(user => user.uid === uid);
   if (!target) return;
 
-  const effectiveRole = getEffectiveRole();
-  const admin = effectiveRole === "Administrador";
+  const admin = isAdministratorRole();
   const librarianCanManage =
-    effectiveRole === "Bibliotecário" && target.baseRole === "Aluno";
+    isLibrarianRole() && target.baseRole === "Aluno";
 
   if (!admin && !librarianCanManage) {
     alert("Você não possui permissão para alterar a situação deste usuário.");
@@ -7159,11 +7184,11 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
 
 window.changeStaffRole = async function(uid, role) {
   if (LOCAL_MODE) {
-    if (!ensureVerified() || getEffectiveRole() !== "Administrador") return;
+    if (!ensureVerified() || !canManageStaffRoles()) return;
     localChangeStaffRole(uid, role);
     return;
   }
-  if (!ensureFirebaseReady() || !ensureVerified() || getEffectiveRole() !== "Administrador") return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canManageStaffRoles()) return;
   if (!["Professor", "Bibliotecário", "Administrador"].includes(role)) return;
   if (uid === state.currentUser.uid) return alert("O administrador não pode alterar o próprio perfil nesta tela.");
   const target = state.users.find(user => user.uid === uid);
