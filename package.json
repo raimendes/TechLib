@@ -8,5 +8,10 @@
   },
   "dependencies": {
     "firebase-admin": "14.3.0"
+  },
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "4.15.9"
+    }
   }
 }
