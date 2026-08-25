@@ -2375,9 +2375,11 @@ const unsubscribers = {
   events: null,
   tavola: null,
   user: null,
+  operatorSelf: null,
   loans: null,
   reservations: null,
-  users: null
+  users: null,
+  operators: null
 };
 
 const state = {
@@ -2388,6 +2390,9 @@ const state = {
   editingBookId: null,
   authUser: null,
   currentUser: null,
+  operatorAccess: false,
+  operatorRegistry: {},
+  operatorsLoaded: false,
   localMode: LOCAL_MODE,
   adminViewRole: sessionStorage.getItem("techlibAdminViewRole") || "",
   books: [],
@@ -2639,20 +2644,44 @@ function getEffectiveRole(user = state.currentUser) {
   return getEffectiveAccessUser(user)?.role || "";
 }
 
+function hasOperatorPermissionForUser(user) {
+  if (!user || user.baseRole !== "Aluno") return false;
+
+  if (LOCAL_MODE) {
+    return user.canManageCollection === true;
+  }
+
+  if (user.uid === state.currentUser?.uid) {
+    return state.operatorAccess === true;
+  }
+
+  return state.operatorRegistry?.[user.uid] === true;
+}
+
 function canOperateLibrary(user = state.currentUser) {
   const effectiveUser = getEffectiveAccessUser(user);
   if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
+
+  if (effectiveUser.role === "Administrador" || effectiveUser.role === "Bibliotecário") {
+    return true;
+  }
+
   return (
-    effectiveUser.role === "Administrador" ||
-    effectiveUser.role === "Bibliotecário" ||
-    effectiveUser.canManageCollection === true
+    effectiveUser.baseRole === "Aluno" &&
+    hasOperatorPermissionForUser(effectiveUser)
   );
 }
 
 function canManageUsers(user = state.currentUser) {
   const effectiveUser = getEffectiveAccessUser(user);
-  return canOperateLibrary(user) && isVerifiedUser() && (
-    effectiveUser?.role === "Administrador" || effectiveUser?.role === "Bibliotecário"
+  return Boolean(
+    effectiveUser &&
+    isActiveUser(effectiveUser) &&
+    isVerifiedUser() &&
+    (
+      effectiveUser.role === "Administrador" ||
+      effectiveUser.role === "Bibliotecário"
+    )
   );
 }
 
@@ -3445,9 +3474,12 @@ function stopPrivateListeners() {
   stopListener("loans");
   stopListener("reservations");
   stopListener("users");
+  stopListener("operators");
   state.loans = [];
   state.reservations = [];
   state.users = state.currentUser ? [state.currentUser] : [];
+  state.operatorRegistry = {};
+  state.operatorsLoaded = false;
   state.privateDataLoaded = false;
 }
 
@@ -3614,6 +3646,48 @@ async function ensureUserDocument(
   });
 }
 
+function startOperatorSelfListener(firebaseUser) {
+  stopListener("operatorSelf");
+  state.operatorAccess = false;
+
+  if (!firebaseUser) return;
+
+  unsubscribers.operatorSelf = onSnapshot(
+    doc(db, "operators", firebaseUser.uid),
+    snapshot => {
+      const previousAccess = state.operatorAccess;
+      state.operatorAccess = Boolean(
+        snapshot.exists() && snapshot.data()?.active === true
+      );
+
+      if (state.currentUser && previousAccess !== state.operatorAccess) {
+        state.lastAccessSignature = "";
+        startPrivateDataListeners();
+      }
+
+      updateAccessState();
+      renderAll();
+
+      if (
+        state.currentUser?.baseRole === "Aluno" &&
+        state.operatorAccess &&
+        isActiveUser(state.currentUser)
+      ) {
+        setFirebaseStatus(
+          "Conta conectada. Acesso de aluno operador ativo.",
+          "ready"
+        );
+      }
+    },
+    error => {
+      console.error("Erro ao verificar autorização de operador:", error);
+      state.operatorAccess = false;
+      updateAccessState();
+      renderAll();
+    }
+  );
+}
+
 function startUserListener(firebaseUser) {
   stopListener("user");
 
@@ -3650,7 +3724,7 @@ function startUserListener(firebaseUser) {
         state.currentUser.uid,
         state.currentUser.baseRole,
         state.currentUser.role,
-        state.currentUser.canManageCollection,
+        state.operatorAccess,
         state.currentUser.isActive,
         state.currentUser.emailVerified,
         state.adminViewRole
@@ -3762,8 +3836,30 @@ function startPrivateDataListeners() {
         console.error("Erro ao carregar usuários:", error);
       }
     );
+
+    unsubscribers.operators = onSnapshot(
+      collection(db, "operators"),
+      snapshot => {
+        const registry = {};
+        snapshot.docs.forEach(item => {
+          const data = item.data();
+          if (data?.active === true) registry[item.id] = true;
+        });
+        state.operatorRegistry = registry;
+        state.operatorsLoaded = true;
+        renderManagement();
+      },
+      error => {
+        console.error("Erro ao carregar autorizações de operadores:", error);
+        state.operatorRegistry = {};
+        state.operatorsLoaded = false;
+        renderManagement();
+      }
+    );
   } else {
     state.users = [user];
+    state.operatorRegistry = {};
+    state.operatorsLoaded = false;
   }
 }
 
@@ -4504,12 +4600,12 @@ function renderEmailVerificationWait() {
         </button>
       </div>
 
-      ${state.currentUser?.canManageCollection ? `
+      ${state.operatorAccess ? `
         <div class="pending-email-card" style="text-align:left;">
-          <strong>Permissão de aluno operador já concedida</strong>
+          <strong>Permissão de aluno operador ativa</strong>
           <span>
-            Sua conta já recebeu acesso de operador. Ao entrar novamente, as funções operacionais
-            de Gestão, Eventos e Távola são carregadas automaticamente.
+            A autorização operacional está registrada separadamente e será aplicada automaticamente
+            às funções de Gestão, Eventos, Távola, empréstimos e reservas.
           </span>
         </div>
       ` : ""}
@@ -4686,14 +4782,14 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
-        <li>Corrigido o bloqueio restante do aluno operador: a navegação e a Gestão agora reconhecem canManageCollection diretamente, sem depender de “Atualizar meu acesso”.</li>
+        <li>Permissão de aluno operador separada do perfil: a autorização agora é registrada em operators/{uid} e carregada automaticamente ao entrar.</li>
         <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
         <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
         <li>Removido o botão “Atualizar meu acesso” e as tentativas automáticas de recuperação que repetiam consultas bloqueadas.</li>
-        <li>Ao entrar na conta, o perfil real é carregado antes das funções privadas; se canManageCollection estiver ativo, as funções de operador são liberadas automaticamente.</li>
+        <li>Ao entrar na conta, o TechLib verifica a autorização de operador separadamente do perfil e libera as funções operacionais automaticamente.</li>
         <li>Corrigidas as regras de leitura do aluno operador para aceitar perfis antigos com campos opcionais ausentes e liberar explicitamente a listagem de empréstimos e reservas.</li>
         <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
-        <li>Simplificada a regra do aluno operador para reconhecer diretamente canManageCollection no perfil autorizado pela Gestão.</li>
+        <li>A autorização do aluno operador deixou de depender do campo antigo canManageCollection; esse campo permanece apenas como espelho de compatibilidade.</li>
         <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
         <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
         <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
@@ -5125,6 +5221,7 @@ function renderStudentPermissionSearchResults() {
 
   container.innerHTML = matches.map(user => {
     const active = user.isActive !== false;
+    const operator = hasOperatorPermissionForUser(user);
     return `
       <div class="permission-user">
         <div>
@@ -5134,18 +5231,18 @@ function renderStudentPermissionSearchResults() {
             <span class="user-status-badge ${active ? "active" : "inactive"}">
               ${active ? "Ativo" : "Desativado"}
             </span>
-            ${user.canManageCollection
+            ${operator
               ? '<span class="user-status-badge active">Aluno operador</span>'
               : ""}
           </div>
         </div>
         <div class="permission-actions">
-          ${active && !user.canManageCollection ? `
+          ${active && !operator ? `
             <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', true)">
               Conceder acesso
             </button>
           ` : ""}
-          ${active && user.canManageCollection ? `
+          ${active && operator ? `
             <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', false)">
               Remover acesso
             </button>
@@ -5165,9 +5262,18 @@ function renderStudentPermissionSearchResults() {
 function renderUserPermissionsCard() {
   if (!canManageUsers()) return "";
 
+  if (!LOCAL_MODE && !state.operatorsLoaded) {
+    return `
+      <article class="management-card">
+        <h3>Alunos operadores</h3>
+        <p>Carregando autorizações de operadores...</p>
+      </article>
+    `;
+  }
+
   const students = state.users.filter(user => user.baseRole === "Aluno");
   const operators = students
-    .filter(user => user.canManageCollection && user.isActive !== false)
+    .filter(user => hasOperatorPermissionForUser(user) && user.isActive !== false)
     .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const operatorsContent = operators.length
@@ -5204,7 +5310,7 @@ function renderUserPermissionsCard() {
     : '<div class="empty-state">Nenhum aluno operador autorizado.</div>';
 
   const availableStudents = students
-    .filter(user => !user.canManageCollection)
+    .filter(user => !hasOperatorPermissionForUser(user))
     .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const showSyncedStudents = students.length > 0 && students.length <= 10;
@@ -5432,7 +5538,7 @@ function updateAccessState() {
   const verifiedAccess = active && isVerifiedUser();
 
   // Operador autorizado pela Gestão recebe as funções operacionais
-  // diretamente pelo canManageCollection, sem depender de um botão extra.
+  // pela coleção operators/{uid}, separada do perfil users/{uid}.
   const movementAccess = operatorAccess || (
     verifiedAccess && (isStudentUser() || isProfessorUser())
   );
@@ -7050,11 +7156,27 @@ window.toggleUserActiveStatus = async function(uid, activate) {
       isActive: Boolean(activate),
       updatedAt: serverTimestamp()
     };
+
+    const batch = writeBatch(db);
+    batch.update(doc(db, "users", uid), {
+      ...payload,
+      ...(!activate && target.baseRole === "Aluno"
+        ? { canManageCollection: false }
+        : {})
+    });
+
     if (!activate && target.baseRole === "Aluno") {
-      payload.canManageCollection = false;
+      batch.delete(doc(db, "operators", uid));
     }
-    await updateDoc(doc(db, "users", uid), payload);
+
+    await batch.commit();
     state.studentPermissionSearch = "";
+
+    alert(
+      activate
+        ? "Perfil reativado. Se o aluno precisar operar a biblioteca, conceda novamente o acesso de aluno operador."
+        : "Perfil desativado. Qualquer autorização de aluno operador também foi removida."
+    );
   } catch (error) {
     console.error(error);
     alert(mapFirebaseError(error));
@@ -7067,21 +7189,61 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
     localToggleStudentPermission(uid, grant);
     return;
   }
+
   if (!ensureFirebaseReady() || !ensureVerified() || !canManageUsers()) return;
+
+  const target = state.users.find(user => user.uid === uid);
+  if (!target || target.baseRole !== "Aluno") {
+    alert("O usuário selecionado não é um aluno.");
+    return;
+  }
+
+  if (grant && target.isActive === false) {
+    alert("Reative o perfil do aluno antes de conceder acesso de operador.");
+    return;
+  }
+
   try {
-    await updateDoc(doc(db, "users", uid), {
-      canManageCollection: Boolean(grant),
-      updatedAt: serverTimestamp()
-    });
+    const batch = writeBatch(db);
+    const userRef = doc(db, "users", uid);
+    const operatorRef = doc(db, "operators", uid);
+
+    if (grant) {
+      batch.set(operatorRef, {
+        uid,
+        active: true,
+        studentName: target.name || "",
+        studentEmail: target.email || "",
+        grantedByUid: state.currentUser.uid,
+        grantedByName: state.currentUser.name || "",
+        grantedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // Campo mantido apenas como espelho de compatibilidade para registros antigos.
+      // A autorização real passa a ser o documento operators/{uid}.
+      batch.update(userRef, {
+        canManageCollection: true,
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      batch.delete(operatorRef);
+      batch.update(userRef, {
+        canManageCollection: false,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    await batch.commit();
     state.studentPermissionSearch = "";
 
     alert(
       grant
-        ? "Acesso de aluno operador concedido. A permissão será carregada automaticamente na conta do aluno. Se ele estiver desconectado, basta entrar novamente."
-        : "Acesso de aluno operador removido. A alteração será aplicada automaticamente."
+        ? "Acesso de aluno operador concedido. Ao entrar na conta, o TechLib reconhecerá automaticamente a autorização."
+        : "Acesso de aluno operador removido. As funções operacionais serão retiradas automaticamente."
     );
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao alterar autorização de aluno operador:", error);
     alert(mapFirebaseError(error));
   }
 };
@@ -7250,6 +7412,10 @@ window.simulatePasswordReset = async function() {
 window.logout = async function() {
   state.adminViewRole = "";
   sessionStorage.removeItem("techlibAdminViewRole");
+  stopListener("operatorSelf");
+  state.operatorAccess = false;
+  state.operatorRegistry = {};
+  state.operatorsLoaded = false;
 
   if (LOCAL_MODE) {
     state.currentUser = null;
@@ -7517,9 +7683,11 @@ if (LOCAL_MODE) {
 
     onAuthStateChanged(auth, async firebaseUser => {
       stopListener("user");
+      stopListener("operatorSelf");
       stopPrivateListeners();
       state.authUser = firebaseUser;
       state.currentUser = null;
+      state.operatorAccess = false;
       state.lastAccessSignature = "";
 
       if (!firebaseUser) {
@@ -7527,6 +7695,10 @@ if (LOCAL_MODE) {
         renderAll();
         return;
       }
+
+      // A autorização operacional é lida separadamente do perfil.
+      // Assim, uma pendência em users/{uid} não apaga o acesso de operador.
+      startOperatorSelfListener(firebaseUser);
 
       // Durante um cadastro recém-iniciado, o formulário ainda está
       // sincronizando nome e perfil. Não criamos outro documento aqui.
@@ -7553,7 +7725,7 @@ if (LOCAL_MODE) {
         // Garante que a conta possua o documento users/{uid}.
         await ensureUserDocument(firebaseUser);
 
-        // O perfil real do Firestore é a fonte da permissão operacional.
+        // O perfil real do Firestore fornece os dados da conta. A permissão operacional vem de operators/{uid}.
         const userSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
         if (!userSnapshot.exists()) {
           throw new Error("Perfil do usuário não encontrado no Firestore.");
@@ -7571,6 +7743,7 @@ if (LOCAL_MODE) {
         }
 
         updateAccessState();
+        startPrivateDataListeners();
         renderAll();
 
         if (!state.currentUser.isActive) {
@@ -7596,8 +7769,9 @@ if (LOCAL_MODE) {
           setFirebaseStatus("Conta conectada ao TechLib.", "ready");
         }
 
-        // O listener mantém role, canManageCollection e isActive sincronizados.
-        // Se a Gestão conceder ou remover a permissão enquanto o aluno estiver
+        // O listener mantém role e isActive sincronizados.
+        // A autorização operacional é acompanhada separadamente em operators/{uid}.
+        // Se a Gestão conceder ou remover a autorização enquanto o aluno estiver
         // conectado, a interface é atualizada automaticamente.
         startUserListener(firebaseUser);
 
@@ -7617,12 +7791,21 @@ if (LOCAL_MODE) {
         state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
 
         updateAccessState();
+        startPrivateDataListeners();
         renderAll();
         setView("profile");
-        setFirebaseStatus(
-          "Não foi possível carregar completamente o perfil da conta.",
-          "error"
-        );
+
+        if (state.operatorAccess) {
+          setFirebaseStatus(
+            "Acesso de aluno operador ativo. Alguns dados do perfil ainda não foram sincronizados.",
+            "ready"
+          );
+        } else {
+          setFirebaseStatus(
+            "Não foi possível carregar completamente o perfil da conta.",
+            "error"
+          );
+        }
       }
     });
   } catch (error) {
