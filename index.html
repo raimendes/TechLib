@@ -2697,11 +2697,25 @@ function getEffectiveRole(user = state.currentUser) {
   return getEffectiveAccessUser(user)?.role || "";
 }
 
+function hasServerOperatorAccess(user = state.currentUser) {
+  const effectiveUser = getEffectiveAccessUser(user);
+  return Boolean(
+    effectiveUser &&
+    effectiveUser.baseRole === "Aluno" &&
+    (
+      hasOperatorClaim() ||
+      effectiveUser.operatorEnabled === true
+    )
+  );
+}
+
 function canOperateLibrary(user = state.currentUser) {
   const effectiveUser = getEffectiveAccessUser(user);
   if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
 
-  if (hasOperatorClaim() && effectiveUser.baseRole === "Aluno") return true;
+  // A API grava a Custom Claim e também mantém operatorEnabled como espelho
+  // protegido no Firestore. Qualquer um dos dois confirma a autorização do aluno.
+  if (hasServerOperatorAccess(effectiveUser)) return true;
 
   return ["Bibliotecário", "Administrador"].includes(effectiveUser.role);
 }
@@ -2710,7 +2724,7 @@ function getOperationalStatusMessage(user = state.currentUser) {
   const role = getEffectiveRole(user);
   if (role === "Administrador") return "Acesso de Administrador ativo.";
   if (role === "Bibliotecário") return "Acesso de Bibliotecário ativo.";
-  if (hasOperatorClaim()) return "Acesso de aluno operador ativo.";
+  if (hasServerOperatorAccess(user)) return "Acesso de aluno operador ativo.";
   return "Conta conectada ao TechLib.";
 }
 
@@ -2747,9 +2761,10 @@ function ensureVerified() {
     return false;
   }
 
-  // A claim operator é concedida somente pela API administrativa.
-  // Para o Aluno operador, ela é suficiente para as funções operacionais.
-  if (hasOperatorClaim()) return true;
+  // A autorização de Aluno operador é concedida somente pela API.
+  // A Custom Claim é a fonte principal e operatorEnabled é o espelho protegido
+  // para evitar falhas de propagação do token.
+  if (hasServerOperatorAccess()) return true;
   if (isVerifiedUser()) return true;
 
   alert("Confirme o e-mail institucional antes de realizar esta operação.");
@@ -3741,8 +3756,8 @@ function startUserListener(firebaseUser) {
     },
     error => {
       console.error("Erro ao carregar perfil:", error);
-      if (hasOperatorClaim()) {
-        setFirebaseStatus("Conta conectada. Acesso de aluno operador ativo.", "ready");
+      if (canOperateLibrary(state.currentUser)) {
+        setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
       } else {
         setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
       }
