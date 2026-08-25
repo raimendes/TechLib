@@ -2293,6 +2293,7 @@ import {
   onAuthStateChanged,
   reload,
   getIdToken,
+  getIdTokenResult,
   updateProfile,
   verifyBeforeUpdateEmail
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
@@ -2334,24 +2335,52 @@ const ROLE_DOMAINS = {
   Aluno: "estudante.rn.gov.br"
 };
 
-// ALUNOS OPERADORES autorizados diretamente pelo Firebase Authentication.
-// A autorização operacional é fixa por UID para estabilidade nesta versão.
-const FIXED_OPERATOR_UIDS = new Set([
-  "vtJ2a33hNZhCqNsdJl8weizY1hv2", // Arquilan
-  "6TYOf5W0EGUUYLPBsj0l58HvS1F3" // Marilia
-]);
+// Acesso de Aluno operador via Firebase Authentication Custom Claims.
+// A API segura em /api/operator-access concede ou remove a claim operator.
+function hasOperatorClaim() {
+  return state.authClaims?.operator === true;
+}
 
-const FIXED_OPERATOR_EMAILS = new Set([
-  "202530496450@estudante.rn.gov.br" // Arquilan, fallback pelo e-mail
-]);
+async function loadAuthClaims(firebaseUser = auth?.currentUser, forceRefresh = false) {
+  if (LOCAL_MODE || !firebaseUser) {
+    state.authClaims = {};
+    return state.authClaims;
+  }
 
-function isFixedOperatorUid(
-  uid = state.authUser?.uid || state.currentUser?.uid || "",
-  email = state.authUser?.email || state.currentUser?.email || ""
-) {
-  const normalizedUid = String(uid || "").trim();
-  const normalizedEmail = String(email || "").trim().toLowerCase();
-  return FIXED_OPERATOR_UIDS.has(normalizedUid) || FIXED_OPERATOR_EMAILS.has(normalizedEmail);
+  const tokenResult = await getIdTokenResult(firebaseUser, forceRefresh);
+  state.authClaims = tokenResult?.claims || {};
+  return state.authClaims;
+}
+
+async function callOperatorAccessApi(uid, grant) {
+  if (LOCAL_MODE) return { ok: true, operator: Boolean(grant) };
+  if (!auth?.currentUser) throw new Error("Entre novamente na conta administrativa.");
+
+  const idToken = await getIdToken(auth.currentUser, true);
+  const response = await fetch("/api/operator-access", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${idToken}`
+    },
+    body: JSON.stringify({
+      action: grant ? "grant" : "revoke",
+      uid
+    })
+  });
+
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error || `A API respondeu com status ${response.status}.`);
+  }
+
+  return payload;
 }
 
 
@@ -2408,6 +2437,7 @@ const state = {
   bookFormOpen: false,
   editingBookId: null,
   authUser: null,
+  authClaims: {},
   currentUser: null,
   localMode: LOCAL_MODE,
   adminViewRole: sessionStorage.getItem("techlibAdminViewRole") || "",
@@ -2604,24 +2634,10 @@ function getUserVisibleName(user) {
 function normalizeUserSnapshot(snapshot) {
   const data = snapshot.data();
   const baseRole = data.baseRole === "Professor" ? "Professor" : "Aluno";
-  const allowedRoles = [
-    "Aluno",
-    "Aluno operador",
-    "Professor",
-    "Bibliotecário",
-    "Administrador"
-  ];
 
-  let role = allowedRoles.includes(data.role)
-    ? data.role
-    : baseRole;
-
-  // Garante coerência entre o tipo original da conta e a função atribuída.
-  if (baseRole === "Aluno" && !["Aluno", "Aluno operador"].includes(role)) {
-    role = "Aluno";
-  }
-  if (baseRole === "Professor" && !["Professor", "Bibliotecário", "Administrador"].includes(role)) {
-    role = "Professor";
+  let role = baseRole;
+  if (baseRole === "Professor" && ["Professor", "Bibliotecário", "Administrador"].includes(data.role)) {
+    role = data.role;
   }
 
   return {
@@ -2630,6 +2646,7 @@ function normalizeUserSnapshot(snapshot) {
     email: String(data.email || "").toLowerCase(),
     baseRole,
     role,
+    operatorEnabled: data.operatorEnabled === true,
     isActive: data.isActive !== false
   };
 }
@@ -2679,18 +2696,20 @@ function getEffectiveRole(user = state.currentUser) {
 }
 
 function canOperateLibrary(user = state.currentUser) {
-  // O UID fixo de teste é suficiente para reconhecer o aluno operador, mesmo se o
-  // documento complementar users/{uid} estiver temporariamente indisponível.
-  if (isFixedOperatorUid()) return true;
-
   const effectiveUser = getEffectiveAccessUser(user);
   if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
 
-  return [
-    "Aluno operador",
-    "Bibliotecário",
-    "Administrador"
-  ].includes(effectiveUser.role);
+  if (hasOperatorClaim() && effectiveUser.baseRole === "Aluno") return true;
+
+  return ["Bibliotecário", "Administrador"].includes(effectiveUser.role);
+}
+
+function getOperationalStatusMessage(user = state.currentUser) {
+  const role = getEffectiveRole(user);
+  if (role === "Administrador") return "Acesso de Administrador ativo.";
+  if (role === "Bibliotecário") return "Acesso de Bibliotecário ativo.";
+  if (hasOperatorClaim()) return "Acesso de aluno operador ativo.";
+  return "Conta conectada ao TechLib.";
 }
 
 function canManageUsers(user = state.currentUser) {
@@ -2726,9 +2745,9 @@ function ensureVerified() {
     return false;
   }
 
-  // Operadores fixos autorizados podem operar
-  // mesmo sem depender do perfil complementar. Contas comuns continuam exigindo confirmação.
-  if (isFixedOperatorUid()) return true;
+  // A claim operator é concedida somente pela API administrativa.
+  // Para o Aluno operador, ela é suficiente para as funções operacionais.
+  if (hasOperatorClaim()) return true;
   if (isVerifiedUser()) return true;
 
   alert("Confirme o e-mail institucional antes de realizar esta operação.");
@@ -3442,9 +3461,9 @@ function localToggleStudentPermission(uid, grant) {
   const user = state.users.find(item => item.uid === uid);
   if (!user || user.baseRole !== "Aluno") return;
 
-  user.role = grant ? "Aluno operador" : "Aluno";
+  user.operatorEnabled = Boolean(grant);
   if (state.currentUser?.uid === uid) {
-    state.currentUser.role = user.role;
+    state.authClaims = { ...state.authClaims, operator: Boolean(grant) };
   }
 
   state.studentPermissionSearch = "";
@@ -3485,8 +3504,8 @@ function localToggleUserActiveStatus(uid, activate) {
   if (!admin && !librarianCanManage) return;
 
   target.isActive = Boolean(activate);
-  if (!activate && target.baseRole === "Aluno" && target.role === "Aluno operador") {
-    target.role = "Aluno";
+  if (!activate && target.baseRole === "Aluno") {
+    target.operatorEnabled = false;
   }
 
   state.studentPermissionSearch = "";
@@ -3694,12 +3713,7 @@ function startUserListener(firebaseUser) {
       if (!state.currentUser.isActive) {
         setFirebaseStatus("Perfil desativado. Procure a administração ou a biblioteca.", "error");
       } else if (canOperateLibrary(state.currentUser)) {
-        setFirebaseStatus(
-          state.currentUser.role === "Aluno operador"
-            ? "Conta conectada. Perfil de Aluno operador ativo."
-            : "Conta conectada. Acesso administrativo ativo.",
-          "ready"
-        );
+        setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
       } else if (!state.currentUser.emailVerified) {
         setFirebaseStatus("Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.", "pending");
       }
@@ -3710,6 +3724,7 @@ function startUserListener(firebaseUser) {
         state.currentUser.role,
         state.currentUser.isActive,
         state.currentUser.emailVerified,
+        hasOperatorClaim(),
         state.adminViewRole
       ].join("|");
 
@@ -3724,7 +3739,7 @@ function startUserListener(firebaseUser) {
     },
     error => {
       console.error("Erro ao carregar perfil:", error);
-      if (isFixedOperatorUid(firebaseUser?.uid)) {
+      if (hasOperatorClaim()) {
         setFirebaseStatus("Conta conectada. Acesso de aluno operador ativo.", "ready");
       } else {
         setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
@@ -3781,7 +3796,7 @@ function startPrivateDataListeners() {
           snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
         );
         state.privateDataLoaded = true;
-        if (operate) setFirebaseStatus("Acesso de aluno operador ativo.", "ready");
+        if (operate) setFirebaseStatus(getOperationalStatusMessage(user), "ready");
         renderAll();
       },
       error => {
@@ -4565,18 +4580,18 @@ function renderEmailVerificationWait() {
         </button>
       </div>
 
-      ${state.currentUser?.role === "Aluno operador" ? `
+      ${hasOperatorClaim() ? `
         <div class="pending-email-card" style="text-align:left;">
           <strong>Permissão de aluno operador ativa</strong>
           <span>
-            Seu perfil está definido como Aluno operador e as funções de Gestão, Eventos,
-            Távola, empréstimos e reservas são liberadas automaticamente.
+            Sua conta recebeu a permissão de Aluno operador pela administração e as funções de Gestão, Eventos,
+            Távola, empréstimos e reservas são liberadas ao entrar novamente.
           </span>
         </div>
       ` : ""}
 
       <p class="verification-wait-note">
-        Para alunos e professores comuns, empréstimos e reservas continuam dependendo da confirmação do e-mail. O perfil Aluno operador recebe as funções operacionais ao entrar na conta.
+        Para alunos e professores comuns, empréstimos e reservas continuam dependendo da confirmação do e-mail. A permissão de Aluno operador é aplicada pela API administrativa.
       </p>
     </article>
   `;
@@ -4646,7 +4661,7 @@ function renderProfile() {
           <span>${escapeHtml(state.currentUser.email)}</span>
         </div>
       </div>
-      <span class="account-tag">${escapeHtml(isFixedOperatorUid() ? "Aluno operador" : state.currentUser.role)}</span>
+      <span class="account-tag">${escapeHtml(hasOperatorClaim() && isStudentUser() ? "Aluno operador" : state.currentUser.role)}</span>
       ${isActualAdministrator() && state.adminViewRole && state.adminViewRole !== "Administrador"
         ? `<span class="account-tag" style="margin-left:6px;">Visualizando como ${escapeHtml(state.adminViewRole)}</span>`
         : ""}
@@ -4750,13 +4765,13 @@ function renderProfile() {
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
         <li>Modo de estabilização: o aluno operador pode ser autorizado diretamente pelo UID do Firebase Authentication, sem depender do carregamento completo do perfil.</li>
-        <li>Aluno operador agora é um perfil real no campo role do usuário, sem coleção separada de autorizações.</li>
+        <li>Aluno operador agora é concedido com segurança pela API do TechLib usando Firebase Authentication Custom Claims.</li>
         <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
         <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
         <li>Ao entrar na conta, o TechLib verifica a autorização de operador separadamente do perfil e libera as funções operacionais automaticamente.</li>
         <li>Corrigidas as regras de leitura do aluno operador para aceitar perfis antigos com campos opcionais ausentes e liberar explicitamente a listagem de empréstimos e reservas.</li>
         <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
-        <li>Conceder acesso altera o perfil do aluno para Aluno operador; remover acesso devolve o perfil para Aluno.</li>
+        <li>Administrador e Bibliotecário podem conceder ou remover acesso de Aluno operador pela Gestão; a permissão entra em vigor ao aluno entrar novamente.</li>
         <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
         <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
         <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
@@ -5188,7 +5203,7 @@ function renderStudentPermissionSearchResults() {
 
   container.innerHTML = matches.map(user => {
     const active = user.isActive !== false;
-    const operator = user.role === "Aluno operador";
+    const operator = user.operatorEnabled === true;
     return `
       <div class="permission-user">
         <div>
@@ -5231,7 +5246,7 @@ function renderUserPermissionsCard() {
 
   const students = state.users.filter(user => user.baseRole === "Aluno");
   const operators = students
-    .filter(user => user.role === "Aluno operador" && user.isActive !== false)
+    .filter(user => user.operatorEnabled === true && user.isActive !== false)
     .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const operatorsContent = operators.length
@@ -5268,7 +5283,7 @@ function renderUserPermissionsCard() {
     : '<div class="empty-state">Nenhum aluno operador autorizado.</div>';
 
   const availableStudents = students
-    .filter(user => user.role !== "Aluno operador")
+    .filter(user => user.operatorEnabled !== true)
     .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
   const showSyncedStudents = students.length > 0 && students.length <= 10;
@@ -7114,8 +7129,9 @@ window.toggleUserActiveStatus = async function(uid, activate) {
       updatedAt: serverTimestamp()
     };
 
-    if (!activate && target.baseRole === "Aluno" && target.role === "Aluno operador") {
-      payload.role = "Aluno";
+    if (!activate && target.baseRole === "Aluno" && target.operatorEnabled === true) {
+      await callOperatorAccessApi(uid, false);
+      target.operatorEnabled = false;
     }
 
     await updateDoc(doc(db, "users", uid), payload);
@@ -7123,8 +7139,8 @@ window.toggleUserActiveStatus = async function(uid, activate) {
 
     alert(
       activate
-        ? "Perfil reativado. Se o aluno precisar operar a biblioteca, conceda novamente o perfil de Aluno operador."
-        : "Perfil desativado. Se era Aluno operador, o perfil voltou para Aluno."
+        ? "Perfil reativado."
+        : "Perfil desativado. Se havia permissão de Aluno operador, ela também foi removida."
     );
   } catch (error) {
     console.error(error);
@@ -7141,19 +7157,34 @@ window.toggleStudentCollectionPermission = async function(uid, grant) {
     return;
   }
 
-  const fixed = isFixedOperatorUid(target.uid);
-  if (grant && fixed) {
-    alert("Este aluno já está autorizado como operador fixo.");
-    return;
-  }
-  if (!grant && fixed) {
-    alert("Este aluno possui acesso fixo de operador. Para removê-lo, retire o UID da lista FIXED_OPERATOR_UIDS no index.html e da função isFixedOperator nas regras do Firestore.");
+  if (target.isActive === false && grant) {
+    alert("Reative o perfil antes de conceder acesso de aluno operador.");
     return;
   }
 
-  alert(
-    "Nesta versão, o acesso de aluno operador é controlado diretamente pela lista fixa de UIDs no código e nas regras do Firestore."
-  );
+  if (LOCAL_MODE) {
+    localToggleStudentPermission(uid, grant);
+    return;
+  }
+
+  if (!ensureFirebaseReady()) return;
+
+  try {
+    await callOperatorAccessApi(uid, grant);
+
+    target.operatorEnabled = Boolean(grant);
+    state.studentPermissionSearch = "";
+    renderManagement();
+
+    alert(
+      grant
+        ? "Acesso de aluno operador concedido. O aluno deve sair e entrar novamente na conta para receber a nova permissão."
+        : "Acesso de aluno operador removido. Se o aluno estiver conectado, peça para sair e entrar novamente. A API também revogou os tokens de atualização da conta."
+    );
+  } catch (error) {
+    console.error("Erro ao alterar acesso de aluno operador pela API:", error);
+    alert(error?.message || "Não foi possível alterar o acesso de aluno operador.");
+  }
 };
 
 window.changeStaffRole = async function(uid, role) {
@@ -7587,6 +7618,7 @@ if (LOCAL_MODE) {
       stopListener("user");
       stopPrivateListeners();
       state.authUser = firebaseUser;
+      state.authClaims = {};
       state.currentUser = null;
       state.lastAccessSignature = "";
 
@@ -7617,27 +7649,7 @@ if (LOCAL_MODE) {
         await reload(firebaseUser);
         await getIdToken(firebaseUser, true);
         state.authUser = firebaseUser;
-
-        // Para operador fixo, a autorização é conhecida diretamente pelo UID ou e-mail autenticado.
-        // Criamos imediatamente um perfil funcional de Aluno operador. O documento
-        // users/{uid} será lido abaixo apenas para complementar nome/e-mail, mas uma
-        // falha nessa leitura não pode retirar a autorização operacional.
-        const fixedOperator = isFixedOperatorUid(firebaseUser.uid);
-        if (fixedOperator) {
-          state.currentUser = buildPendingProfileFromAuth(firebaseUser, "Aluno", firebaseUser.displayName || "Aluno operador");
-          state.currentUser.role = "Aluno operador";
-          state.currentUser.baseRole = "Aluno";
-          state.currentUser.isActive = true;
-          state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-
-          updateAccessState();
-          startPrivateDataListeners();
-          renderAll();
-          setFirebaseStatus(
-            "Conta conectada. Acesso de aluno operador ativo.",
-            "ready"
-          );
-        }
+        await loadAuthClaims(firebaseUser, false);
 
         // Primeiro lê o perfil real. Em contas já existentes isso evita qualquer
         // tentativa de escrita desnecessária antes de descobrir a função atual.
@@ -7656,11 +7668,6 @@ if (LOCAL_MODE) {
 
         state.currentUser = normalizeUserSnapshot(userSnapshot);
         state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-        if (isFixedOperatorUid(firebaseUser.uid)) {
-          state.currentUser.baseRole = "Aluno";
-          state.currentUser.role = "Aluno operador";
-          state.currentUser.isActive = true;
-        }
 
         if (!isActualAdministrator(state.currentUser)) {
           state.adminViewRole = "";
@@ -7681,12 +7688,7 @@ if (LOCAL_MODE) {
           );
           setView("profile");
         } else if (canOperateLibrary(state.currentUser)) {
-          setFirebaseStatus(
-            state.currentUser.role === "Aluno operador"
-              ? "Conta conectada. Perfil de Aluno operador carregado automaticamente."
-              : "Conta conectada. Acesso administrativo carregado.",
-            "ready"
-          );
+          setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
         } else if (!firebaseUser.emailVerified) {
           setFirebaseStatus(
             "Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.",
@@ -7697,9 +7699,9 @@ if (LOCAL_MODE) {
           setFirebaseStatus("Conta conectada ao TechLib.", "ready");
         }
 
-        // O listener mantém role e isActive sincronizados.
-        // Se a Gestão conceder ou remover o perfil Aluno operador enquanto o aluno
-        // estiver conectado, a interface é atualizada automaticamente.
+        // O listener mantém role e isActive sincronizados. A permissão de Aluno
+        // operador é uma Custom Claim e entra em vigor quando o usuário recebe um novo token,
+        // normalmente ao sair e entrar novamente na conta.
         startUserListener(firebaseUser);
 
         if (firebaseUser.emailVerified) {
@@ -7712,17 +7714,15 @@ if (LOCAL_MODE) {
       } catch (error) {
         console.error("Erro ao preparar a conta autenticada:", error);
 
-        // Mantém os dados básicos da sessão. Para e-mail fixo de operador, a
-        // autorização não depende do documento users/{uid}, então as funções
-        // operacionais continuam disponíveis mesmo se esse perfil complementar
-        // apresentar uma pendência de leitura.
+        // Mantém os dados básicos da sessão. Se a claim operator estiver ativa,
+        // o acesso operacional não depende da leitura complementar de users/{uid}.
         state.currentUser = buildPendingProfileFromAuth(firebaseUser);
         state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
         state.currentUser.isActive = true;
 
-        if (isFixedOperatorUid(firebaseUser.uid)) {
+        if (hasOperatorClaim()) {
           state.currentUser.baseRole = "Aluno";
-          state.currentUser.role = "Aluno operador";
+          state.currentUser.role = "Aluno";
           updateAccessState();
           startPrivateDataListeners();
           renderAll();
