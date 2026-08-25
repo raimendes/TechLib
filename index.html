@@ -2391,6 +2391,7 @@ const state = {
   authUser: null,
   currentUser: null,
   operatorAccess: false,
+  operatorChecked: false,
   operatorRegistry: {},
   operatorsLoaded: false,
   localMode: LOCAL_MODE,
@@ -3649,6 +3650,7 @@ async function ensureUserDocument(
 function startOperatorSelfListener(firebaseUser) {
   stopListener("operatorSelf");
   state.operatorAccess = false;
+  state.operatorChecked = false;
 
   if (!firebaseUser) return;
 
@@ -3659,8 +3661,9 @@ function startOperatorSelfListener(firebaseUser) {
       state.operatorAccess = Boolean(
         snapshot.exists() && snapshot.data()?.active === true
       );
+      state.operatorChecked = true;
 
-      if (state.currentUser && previousAccess !== state.operatorAccess) {
+      if (state.currentUser) {
         state.lastAccessSignature = "";
         startPrivateDataListeners();
       }
@@ -3682,6 +3685,7 @@ function startOperatorSelfListener(firebaseUser) {
     error => {
       console.error("Erro ao verificar autorização de operador:", error);
       state.operatorAccess = false;
+      state.operatorChecked = true;
       updateAccessState();
       renderAll();
     }
@@ -3774,6 +3778,13 @@ function startPrivateDataListeners() {
   const user = state.currentUser;
   if (!isActiveUser(user)) {
     renderAll();
+    return;
+  }
+
+  // Para alunos, aguardamos primeiro a consulta de operators/{uid}.
+  // Isso evita iniciar um listener de aluno comum antes de saber se a conta
+  // possui autorização operacional.
+  if (!LOCAL_MODE && user.baseRole === "Aluno" && !state.operatorChecked) {
     return;
   }
 
@@ -4782,7 +4793,7 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
-        <li>Permissão de aluno operador separada do perfil: a autorização agora é registrada em operators/{uid} e carregada automaticamente ao entrar.</li>
+        <li>Permissão de aluno operador independente do carregamento do perfil: a autorização é lida em operators/{uid} antes dos empréstimos e reservas.</li>
         <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
         <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
         <li>Removido o botão “Atualizar meu acesso” e as tentativas automáticas de recuperação que repetiam consultas bloqueadas.</li>
@@ -7688,6 +7699,7 @@ if (LOCAL_MODE) {
       state.authUser = firebaseUser;
       state.currentUser = null;
       state.operatorAccess = false;
+      state.operatorChecked = false;
       state.lastAccessSignature = "";
 
       if (!firebaseUser) {
