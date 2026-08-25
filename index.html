@@ -2334,16 +2334,25 @@ const ROLE_DOMAINS = {
   Aluno: "estudante.rn.gov.br"
 };
 
-// USUÁRIO DE TESTE autorizado diretamente pelo UID do Firebase Authentication.
-// Este fluxo é propositalmente independente do documento users/{uid} e da
-// confirmação de e-mail, para diagnosticar se uma conta nova consegue operar.
+// ALUNOS OPERADORES autorizados diretamente pelo Firebase Authentication.
+// Este fluxo é independente do documento users/{uid} para a autorização operacional.
 const FIXED_OPERATOR_UIDS = new Set([
-  "96aQDjdNiRTj4SjaEqlBiVT04ZJ2",
-  "vtJ2a33hNZhCqNsdJl8weizY1hv2" // teste.operador@estudante.rn.gov.br
+  "96aQDjdNiRTj4SjaEqlBiVT04ZJ2", // teste.operador@estudante.rn.gov.br
+  "vtJ2a33hNZhCqNsdJl8weizY1hv2" // Arquilan
 ]);
 
-function isFixedOperatorUid(uid = state.authUser?.uid || state.currentUser?.uid || "") {
-  return FIXED_OPERATOR_UIDS.has(String(uid || "").trim());
+const FIXED_OPERATOR_EMAILS = new Set([
+  "teste.operador@estudante.rn.gov.br",
+  "202530496450@estudante.rn.gov.br"
+]);
+
+function isFixedOperatorUid(
+  uid = state.authUser?.uid || state.currentUser?.uid || "",
+  email = state.authUser?.email || state.currentUser?.email || ""
+) {
+  const normalizedUid = String(uid || "").trim();
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  return FIXED_OPERATOR_UIDS.has(normalizedUid) || FIXED_OPERATOR_EMAILS.has(normalizedEmail);
 }
 
 
@@ -2718,8 +2727,8 @@ function ensureVerified() {
     return false;
   }
 
-  // Exceção temporária de diagnóstico: o usuário de teste por UID pode operar
-  // mesmo sem e-mail confirmado. Contas comuns continuam exigindo confirmação.
+  // Operadores fixos autorizados podem operar
+  // mesmo sem depender do perfil complementar. Contas comuns continuam exigindo confirmação.
   if (isFixedOperatorUid()) return true;
   if (isVerifiedUser()) return true;
 
@@ -3717,7 +3726,7 @@ function startUserListener(firebaseUser) {
     error => {
       console.error("Erro ao carregar perfil:", error);
       if (isFixedOperatorUid(firebaseUser?.uid)) {
-        setFirebaseStatus("Conta de teste conectada. Acesso de operador por UID ativo.", "ready");
+        setFirebaseStatus("Conta conectada. Acesso de aluno operador ativo.", "ready");
       } else {
         setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
       }
@@ -7610,13 +7619,13 @@ if (LOCAL_MODE) {
         await getIdToken(firebaseUser, true);
         state.authUser = firebaseUser;
 
-        // Para o usuário de teste, a autorização é conhecida diretamente pelo UID.
+        // Para operador fixo, a autorização é conhecida diretamente pelo UID ou e-mail autenticado.
         // Criamos imediatamente um perfil funcional de Aluno operador. O documento
         // users/{uid} será lido abaixo apenas para complementar nome/e-mail, mas uma
         // falha nessa leitura não pode retirar a autorização operacional.
-        const fixedTestOperator = isFixedOperatorUid(firebaseUser.uid);
-        if (fixedTestOperator) {
-          state.currentUser = buildPendingProfileFromAuth(firebaseUser, "Aluno", "Teste Operador");
+        const fixedOperator = isFixedOperatorUid(firebaseUser.uid);
+        if (fixedOperator) {
+          state.currentUser = buildPendingProfileFromAuth(firebaseUser, "Aluno", firebaseUser.displayName || "Aluno operador");
           state.currentUser.role = "Aluno operador";
           state.currentUser.baseRole = "Aluno";
           state.currentUser.isActive = true;
@@ -7626,7 +7635,7 @@ if (LOCAL_MODE) {
           startPrivateDataListeners();
           renderAll();
           setFirebaseStatus(
-            "Conta de teste conectada. Acesso de operador por UID ativo.",
+            "Conta conectada. Acesso de aluno operador ativo.",
             "ready"
           );
         }
@@ -7720,7 +7729,7 @@ if (LOCAL_MODE) {
           renderAll();
           setView(state.currentView || "home");
           setFirebaseStatus(
-            "Conta de teste conectada. Acesso de operador por UID ativo.",
+            "Conta conectada. Acesso de aluno operador ativo.",
             "ready"
           );
         } else {
