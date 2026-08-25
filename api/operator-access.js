@@ -124,15 +124,10 @@ export default async function handler(req, res) {
     }
 
     const targetUser = await adminAuth.getUser(uid);
-    const targetEmail = String(targetUser.email || "").toLowerCase();
 
-    if (!targetEmail.endsWith("@estudante.rn.gov.br")) {
-      return send(res, 400, {
-        ok: false,
-        error: "A permissão de Aluno operador só pode ser concedida a uma conta de estudante."
-      });
-    }
-
+    // A condição principal para receber acesso de operador é o perfil do TechLib
+    // ser um perfil de aluno. Não dependemos do sufixo do e-mail no Authentication,
+    // pois contas antigas podem ter sido criadas ou normalizadas de forma diferente.
     const targetRef = adminDb.doc(`users/${uid}`);
     const targetSnapshot = await targetRef.get();
 
@@ -144,10 +139,12 @@ export default async function handler(req, res) {
     }
 
     const targetProfile = targetSnapshot.data() || {};
-    if (targetProfile.baseRole !== "Aluno") {
+    const targetBaseRole = String(targetProfile.baseRole || "").trim();
+
+    if (targetBaseRole !== "Aluno") {
       return send(res, 400, {
         ok: false,
-        error: "O perfil selecionado não é um aluno."
+        error: "A permissão de Aluno operador só pode ser concedida a um perfil de aluno."
       });
     }
 
