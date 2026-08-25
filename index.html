@@ -3635,8 +3635,15 @@ function startUserListener(firebaseUser) {
 
       if (!state.currentUser.isActive) {
         setFirebaseStatus("Perfil desativado. Procure a administração ou a biblioteca.", "error");
+      } else if (canOperateLibrary(state.currentUser)) {
+        setFirebaseStatus(
+          state.currentUser.baseRole === "Aluno"
+            ? "Conta conectada. Acesso de aluno operador ativo."
+            : "Conta conectada. Acesso administrativo ativo.",
+          "ready"
+        );
       } else if (!state.currentUser.emailVerified) {
-        setFirebaseStatus("Conta conectada. Confirme o e-mail institucional para liberar as funções.", "pending");
+        setFirebaseStatus("Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.", "pending");
       }
 
       const signature = [
@@ -4583,7 +4590,7 @@ function renderProfile() {
         ? `<span class="account-tag" style="margin-left:6px;">Visualizando como ${escapeHtml(state.adminViewRole)}</span>`
         : ""}
       <span class="account-tag" style="margin-left:6px;">${state.currentUser.emailVerified ? "E-mail confirmado" : "E-mail pendente"}</span>
-      ${state.currentUser.canManageCollection && state.currentUser.role === "Aluno"
+      ${state.currentUser.baseRole === "Aluno" && canOperateLibrary()
         ? '<span class="account-tag" style="margin-left:6px;">Aluno operador do TechLib</span>'
         : ""}
     </article>
@@ -4679,6 +4686,8 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigido o bloqueio restante do aluno operador: a navegação e a Gestão agora reconhecem canManageCollection diretamente, sem depender de “Atualizar meu acesso”.</li>
+        <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
         <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
         <li>Removido o botão “Atualizar meu acesso” e as tentativas automáticas de recuperação que repetiam consultas bloqueadas.</li>
         <li>Ao entrar na conta, o perfil real é carregado antes das funções privadas; se canManageCollection estiver ativo, as funções de operador são liberadas automaticamente.</li>
@@ -5420,9 +5429,12 @@ function updateAccessState() {
   const logged = Boolean(state.currentUser);
   const active = logged && isActiveUser();
   const operatorAccess = active && canOperateLibrary();
-  const verifiedCommonAccess = active && isVerifiedUser();
+  const verifiedAccess = active && isVerifiedUser();
+
+  // Operador autorizado pela Gestão recebe as funções operacionais
+  // diretamente pelo canManageCollection, sem depender de um botão extra.
   const movementAccess = operatorAccess || (
-    verifiedCommonAccess && (isStudentUser() || isProfessorUser())
+    verifiedAccess && (isStudentUser() || isProfessorUser())
   );
 
   elements.headerAccessButton.textContent = logged ? "Perfil" : "Entrar";
@@ -5433,10 +5445,23 @@ function updateAccessState() {
     elements.loansNavLabel.textContent = isProfessorUser() ? "Reservas" : "Empréstimos";
   }
 
-  if (!movementAccess && state.currentView === "loans") setView(logged ? "profile" : "home");
-  if (!operatorAccess && state.currentView === "management") setView(logged ? "profile" : "home");
+  if (!movementAccess && state.currentView === "loans") {
+    setView(logged ? "profile" : "home");
+  }
 
-  if (logged && !isVerifiedUser() && !operatorAccess && ["loans", "management"].includes(state.currentView)) {
+  if (!operatorAccess && state.currentView === "management") {
+    setView(logged ? "profile" : "home");
+  }
+
+  // A confirmação do e-mail continua bloqueando aluno/professor comum.
+  // Ela não remove uma permissão operacional que já foi concedida
+  // explicitamente pela Gestão ao aluno operador.
+  if (
+    logged &&
+    !isVerifiedUser() &&
+    !operatorAccess &&
+    ["loans", "management"].includes(state.currentView)
+  ) {
     setView("profile");
   }
 }
