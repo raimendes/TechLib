@@ -2746,6 +2746,32 @@ function canManageUsers(user = state.currentUser) {
   return canManageStudentUsers(user);
 }
 
+function getOperationalAccessStatusMessage(user = state.currentUser, mode = "active") {
+  const actualRole = String(user?.role || "");
+
+  if (actualRole === "Administrador") {
+    return mode === "loaded"
+      ? "Conta conectada. Acesso de Administrador carregado."
+      : "Acesso de Administrador ativo.";
+  }
+
+  if (actualRole === "Bibliotecário") {
+    return mode === "loaded"
+      ? "Conta conectada. Acesso de Bibliotecário carregado."
+      : "Acesso de Bibliotecário ativo.";
+  }
+
+  if (user?.baseRole === "Aluno" && hasOperatorAccess()) {
+    return mode === "loaded"
+      ? "Conta conectada. Acesso de aluno operador carregado automaticamente."
+      : "Acesso de aluno operador ativo.";
+  }
+
+  return mode === "loaded"
+    ? "Conta conectada. Acesso operacional carregado."
+    : "Acesso operacional ativo.";
+}
+
 function ensureOperatorAccess() {
   if (!state.currentUser) {
     alert("Entre na conta para utilizar esta função.");
@@ -3785,9 +3811,7 @@ function startUserListener(firebaseUser) {
         setFirebaseStatus("Perfil desativado. Procure a administração ou a biblioteca.", "error");
       } else if (canOperateLibrary(state.currentUser)) {
         setFirebaseStatus(
-          isStudentUser(state.currentUser) && hasOperatorAccess()
-            ? "Conta conectada. Acesso de aluno operador ativo."
-            : "Conta conectada. Acesso administrativo ativo.",
+          getOperationalAccessStatusMessage(state.currentUser, "active"),
           "ready"
         );
       } else if (!state.currentUser.emailVerified) {
@@ -3872,7 +3896,12 @@ function startPrivateDataListeners() {
           snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
         );
         state.privateDataLoaded = true;
-        if (operate) setFirebaseStatus("Acesso de aluno operador ativo.", "ready");
+        if (operate) {
+          setFirebaseStatus(
+            getOperationalAccessStatusMessage(state.currentUser, "active"),
+            "ready"
+          );
+        }
         renderAll();
       },
       error => {
@@ -7806,9 +7835,7 @@ if (LOCAL_MODE) {
           setView("profile");
         } else if (canOperateLibrary(state.currentUser)) {
           setFirebaseStatus(
-            isStudentUser(state.currentUser) && hasOperatorAccess()
-              ? "Conta conectada. Acesso de aluno operador carregado automaticamente."
-              : "Conta conectada. Acesso administrativo carregado.",
+            getOperationalAccessStatusMessage(state.currentUser, "loaded"),
             "ready"
           );
         } else if (!firebaseUser.emailVerified) {
