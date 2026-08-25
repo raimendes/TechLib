@@ -2025,6 +2025,35 @@
       transition: background-color 9999s ease-out 0s;
     }
 
+
+/* Correção definitiva de contraste do login */
+.auth-form input,
+.auth-card input,
+#authModal input,
+input[type="email"],
+input[type="password"] {
+  color: var(--text, #f4f7fb) !important;
+  caret-color: var(--text, #f4f7fb) !important;
+}
+
+.auth-form input::placeholder,
+.auth-card input::placeholder,
+#authModal input::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--muted, #aebbd0) !important;
+  opacity: 1;
+}
+
+.auth-form input:-webkit-autofill,
+.auth-card input:-webkit-autofill,
+#authModal input:-webkit-autofill,
+input[type="email"]:-webkit-autofill,
+input[type="password"]:-webkit-autofill {
+  -webkit-text-fill-color: var(--text, #f4f7fb) !important;
+  caret-color: var(--text, #f4f7fb) !important;
+}
+
 </style>
 </head>
 <body>
@@ -2565,7 +2594,7 @@ function normalizeUserSnapshot(snapshot) {
     role: ["Aluno", "Professor", "Bibliotecário", "Administrador"].includes(data.role)
       ? data.role
       : data.baseRole === "Professor" ? "Professor" : "Aluno",
-    canManageCollection: Boolean(data.canManageCollection),
+    canManageCollection: data.canManageCollection === true,
     isActive: data.isActive !== false
   };
 }
@@ -5671,14 +5700,18 @@ window.refreshMyAccess = async function() {
           "error"
         );
         alert(
-          "Permissão de operador no perfil: SIM" +
-          "\nE-mail confirmado: SIM" +
-          "\nPerfil ativo: SIM" +
+          "Permissão de operador interpretada pelo TechLib: " + (operator ? "SIM" : "NÃO") +
+          "\nE-mail confirmado: " + (verified ? "SIM" : "NÃO") +
+          "\nPerfil ativo: " + (active ? "SIM" : "NÃO") +
           "\nFirestore: BLOQUEADO" +
-          "\n\nCampos reais no perfil: role=" + String(rawProfile.role ?? "não informado") +
-          " | isActive=" + String(rawProfile.isActive ?? "não informado") +
-          " | canManageCollection=" + String(rawProfile.canManageCollection ?? "não informado") +
-          "\n\nAs regras desta versão aceitam perfis antigos mesmo quando role ou isActive não existiam no documento original."
+          "\n\nDADOS BRUTOS DO FIRESTORE:" +
+          "\nrole = " + String(rawProfile.role ?? "não informado") +
+          "\nisActive = " + String(rawProfile.isActive ?? "não informado") +
+          "\ncanManageCollection = " + String(rawProfile.canManageCollection ?? "não informado") +
+          "\ntipo de canManageCollection = " + typeof rawProfile.canManageCollection +
+          "\nuid = " + String(firebaseUser.uid) +
+          "\nprojeto = techlib-e308a" +
+          "\n\nSe canManageCollection não aparecer como true e tipo boolean, a permissão não está gravada corretamente. Se aparecer true/boolean e continuar bloqueado, então o problema está exclusivamente nas regras publicadas."
         );
         return;
       }
