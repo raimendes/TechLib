@@ -1993,6 +1993,38 @@
       font-size: 0.69rem !important;
     }
 
+
+
+    /* Correção de contraste dos campos de autenticação */
+    .email-composer input,
+    #emailPrefixInput,
+    #passwordInput,
+    #confirmPasswordInput,
+    #nameInput {
+      color: var(--text) !important;
+      caret-color: var(--text) !important;
+    }
+
+    .email-composer input::placeholder,
+    #emailPrefixInput::placeholder,
+    #passwordInput::placeholder,
+    #confirmPasswordInput::placeholder,
+    #nameInput::placeholder {
+      color: var(--muted) !important;
+      opacity: 1;
+    }
+
+    /* Mantém o texto legível no preenchimento automático do Chrome/Android */
+    .email-composer input:-webkit-autofill,
+    #emailPrefixInput:-webkit-autofill,
+    #passwordInput:-webkit-autofill,
+    #confirmPasswordInput:-webkit-autofill,
+    #nameInput:-webkit-autofill {
+      -webkit-text-fill-color: var(--text) !important;
+      caret-color: var(--text) !important;
+      transition: background-color 9999s ease-out 0s;
+    }
+
 </style>
 </head>
 <body>
@@ -2322,7 +2354,7 @@ const unsubscribers = {
 };
 
 const state = {
-  currentView: "home",
+  currentView: sessionStorage.getItem("techlibCurrentView") || "home",
   authMode: "login",
   selectedRole: null,
   bookFormOpen: false,
@@ -3586,6 +3618,7 @@ function startUserListener(firebaseUser) {
 
       updateAccessState();
       renderAll();
+      setView(state.currentView || "home");
     },
     error => {
       console.error("Erro ao carregar perfil:", error);
@@ -4691,6 +4724,9 @@ function renderProfile() {
       <h3>Últimas atualizações</h3>
       <p class="updates-date">11/08/2026</p>
       <ul class="updates-list">
+        <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
+        <li>Simplificada a regra do aluno operador para reconhecer diretamente canManageCollection no perfil autorizado pela Gestão.</li>
+        <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
         <li>Revisada a autorização do aluno operador: o TechLib agora testa diretamente as regras do Firestore e informa se a permissão, o e-mail, o perfil ou as regras publicadas estão bloqueando o acesso.</li>
         <li>Corrigida a sincronização do token do Firebase antes de liberar as funções de aluno operador.</li>
         <li>Quando o Firestore devolve bloqueio de permissão para um operador autorizado, o TechLib agora tenta renovar a autorização automaticamente.</li>
@@ -5406,6 +5442,12 @@ function setView(viewName) {
   }
 
   state.currentView = viewName;
+  try {
+    sessionStorage.setItem("techlibCurrentView", viewName);
+  } catch (error) {
+    console.warn("Não foi possível salvar a página atual:", error);
+  }
+
   elements.views.forEach(view => view.classList.toggle("active", view.id === `view-${viewName}`));
   elements.navButtons.forEach(button => button.classList.toggle("active", button.dataset.view === viewName));
 
@@ -5547,6 +5589,8 @@ window.refreshMyAccess = async function() {
     return;
   }
 
+  const viewBeforeRefresh = state.currentView || "profile";
+
   try {
     setFirebaseStatus("Atualizando situação da conta...", "pending");
 
@@ -5574,7 +5618,7 @@ window.refreshMyAccess = async function() {
 
     updateAccessState();
     renderAll();
-    setView("profile");
+    setView(viewBeforeRefresh);
 
     if (!verified) {
       setFirebaseStatus(
@@ -5628,7 +5672,7 @@ window.refreshMyAccess = async function() {
           "\nE-mail confirmado: SIM" +
           "\nPerfil ativo: SIM" +
           "\nFirestore: BLOQUEADO" +
-          "\n\nA conta está correta. O bloqueio está nas regras do Firestore. Publique a versão mais recente das regras do TechLib."
+          "\n\nA conta está correta. O bloqueio está nas regras publicadas do Firestore. Publique as regras corrigidas desta versão."
         );
         return;
       }
@@ -5642,7 +5686,7 @@ window.refreshMyAccess = async function() {
 
     updateAccessState();
     renderAll();
-    setView("profile");
+    setView(viewBeforeRefresh);
 
     setFirebaseStatus("Acesso de aluno operador reconhecido pelo Firebase.", "ready");
     alert(
