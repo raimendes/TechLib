@@ -2338,7 +2338,8 @@ const ROLE_DOMAINS = {
 // Este fluxo é propositalmente independente do documento users/{uid} e da
 // confirmação de e-mail, para diagnosticar se uma conta nova consegue operar.
 const FIXED_OPERATOR_UIDS = new Set([
-  "96aQDjdNiRTj4SjaEqlBiVT04ZJ2" // teste.operador@estudante.rn.gov.br
+  "96aQDjdNiRTj4SjaEqlBiVT04ZJ2",
+  "vtJ2a33hNZhCqNsdJl8weizY1hv2" // teste.operador@estudante.rn.gov.br
 ]);
 
 function isFixedOperatorUid(uid = state.authUser?.uid || state.currentUser?.uid || "") {
