@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechLib - Teste da lista de alunos</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 35px auto; padding: 0 20px; }
+    pre { background: #111; color: #eee; padding: 18px; border-radius: 10px; white-space: pre-wrap; word-break: break-word; }
+    button { padding: 10px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>TechLib - Teste da lista oficial de alunos</h1>
+  <p>Esta página usa o Firebase Authentication como fonte da lista. Ela não altera nenhum usuário.</p>
+  <button id="test">Testar novamente</button>
+  <p id="status">Aguardando...</p>
+  <pre id="result">Nenhum resultado.</pre>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB46S94ee_c-00vExyjyRABDCEKHrr4Wy4",
+      authDomain: "techlib-e308a.firebaseapp.com",
+      projectId: "techlib-e308a",
+      storageBucket: "techlib-e308a.firebasestorage.app",
+      messagingSenderId: "63070344950",
+      appId: "1:63070344950:web:44f731360f3baaccbb3ed7",
+      measurementId: "G-4SS1CM5X4H"
+    };
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const button = document.getElementById("test");
+
+    async function run() {
+      const user = auth.currentUser;
+
+      if (!user) {
+        status.textContent = "Entre primeiro no TechLib com uma conta de Administrador ou Bibliotecário.";
+        result.textContent = JSON.stringify({ ok: false, error: "Nenhuma conta conectada." }, null, 2);
+        return;
+      }
+
+      status.textContent = `Consultando como ${user.email}...`;
+
+      try {
+        const token = await user.getIdToken(true);
+        const response = await fetch("/api/students", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        status.textContent = response.ok
+          ? `Sucesso. ${data.count ?? 0} conta(s) de estudante encontrada(s).`
+          : `Erro HTTP ${response.status}.`;
+
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        status.textContent = "Falha ao consultar a API.";
+        result.textContent = JSON.stringify({ ok: false, error: error.message }, null, 2);
+      }
+    }
+
+    onAuthStateChanged(auth, run);
+    button.addEventListener("click", run);
+  </script>
+</body>
+</html>
