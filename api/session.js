@@ -37,8 +37,22 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function inferBaseRoleFromEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (normalized.endsWith("@estudante.rn.gov.br")) return "Aluno";
+  if (normalized.endsWith("@educar.rn.gov.br")) return "Professor";
+  return null;
+}
+
 function normalizeProfile(uid, authUser, data = {}) {
-  const baseRole = data.baseRole === "Professor" ? "Professor" : "Aluno";
+  const inferredBaseRole = inferBaseRoleFromEmail(authUser.email);
+  const baseRole =
+    data.baseRole === "Professor"
+      ? "Professor"
+      : data.baseRole === "Aluno"
+        ? "Aluno"
+        : inferredBaseRole || "Aluno";
+
   const allowedRoles = ["Aluno", "Professor", "Bibliotecário", "Administrador"];
   const role = allowedRoles.includes(data.role) ? data.role : baseRole;
 
@@ -55,30 +69,90 @@ function normalizeProfile(uid, authUser, data = {}) {
 
 async function findLegacyProfileByEmail(adminDb, email, currentUid) {
   const normalizedEmail = normalizeEmail(email);
+
   if (!normalizedEmail) {
-    return { snapshot: null, ambiguous: false };
+    return { snapshot: null, ambiguous: false, method: null };
   }
 
-  // Os perfis do TechLib armazenam o e-mail normalizado em minúsculas.
-  // Buscamos até 3 resultados apenas para detectar duplicidade e evitar
-  // migrar automaticamente um perfil ambíguo.
-  const querySnapshot = await adminDb
+  // 1) Busca exata, rápida.
+  const exactQuery = await adminDb
     .collection("users")
     .where("email", "==", normalizedEmail)
     .limit(3)
     .get();
 
-  const candidates = querySnapshot.docs.filter((doc) => doc.id !== currentUid);
+  const exactCandidates = exactQuery.docs.filter((doc) => doc.id !== currentUid);
 
-  if (candidates.length === 0) {
-    return { snapshot: null, ambiguous: false };
+  if (exactCandidates.length === 1) {
+    return {
+      snapshot: exactCandidates[0],
+      ambiguous: false,
+      method: "exact-email-query"
+    };
   }
 
-  if (candidates.length > 1) {
-    return { snapshot: null, ambiguous: true };
+  if (exactCandidates.length > 1) {
+    return { snapshot: null, ambiguous: true, method: "exact-email-query" };
   }
 
-  return { snapshot: candidates[0], ambiguous: false };
+  // 2) Fallback de migração:
+  // lê a coleção apenas quando a busca exata falha e compara e-mail normalizado.
+  // Isso resolve perfis antigos que tenham espaços, maiúsculas ou formatação legada.
+  const allUsers = await adminDb.collection("users").get();
+
+  const normalizedCandidates = allUsers.docs.filter((doc) => {
+    if (doc.id === currentUid) return false;
+    const data = doc.data() || {};
+    return normalizeEmail(data.email) === normalizedEmail;
+  });
+
+  if (normalizedCandidates.length === 1) {
+    return {
+      snapshot: normalizedCandidates[0],
+      ambiguous: false,
+      method: "normalized-collection-scan"
+    };
+  }
+
+  if (normalizedCandidates.length > 1) {
+    return {
+      snapshot: null,
+      ambiguous: true,
+      method: "normalized-collection-scan"
+    };
+  }
+
+  return { snapshot: null, ambiguous: false, method: "not-found" };
+}
+
+async function createSafeProfileForCurrentAuth(adminDb, authUser) {
+  const email = normalizeEmail(authUser.email);
+  const baseRole = inferBaseRoleFromEmail(email);
+
+  if (!baseRole) {
+    const error = new Error(
+      "Não foi possível identificar se a conta pertence a aluno ou professor pelo domínio institucional."
+    );
+    error.status = 422;
+    throw error;
+  }
+
+  const currentRef = adminDb.doc(`users/${authUser.uid}`);
+
+  const data = {
+    name: String(authUser.displayName || "").trim(),
+    email,
+    baseRole,
+    role: baseRole,
+    isActive: true,
+    operatorEnabled: false,
+    repairedFromAuthentication: true,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  };
+
+  await currentRef.set(data, { merge: false });
+  return await currentRef.get();
 }
 
 async function ensureCurrentUidProfile(adminDb, authUser) {
@@ -90,7 +164,9 @@ async function ensureCurrentUidProfile(adminDb, authUser) {
     return {
       snapshot: currentSnapshot,
       migrated: false,
-      migratedFromUid: null
+      createdFromAuth: false,
+      migratedFromUid: null,
+      migrationMethod: "current-uid"
     };
   }
 
@@ -98,17 +174,15 @@ async function ensureCurrentUidProfile(adminDb, authUser) {
 
   if (!email) {
     const error = new Error(
-      "A conta autenticada não possui e-mail. Não foi possível localizar um perfil antigo."
+      "A conta autenticada não possui e-mail. Não foi possível localizar ou reconstruir o perfil."
     );
     error.status = 404;
     throw error;
   }
 
-  // A migração automática só é feita com e-mail confirmado. Isso impede que
-  // uma conta não verificada tente assumir um perfil antigo apenas por e-mail.
   if (authUser.emailVerified !== true) {
     const error = new Error(
-      "O perfil atual não foi encontrado e o e-mail da conta ainda não está confirmado. Confirme o e-mail antes de reparar o perfil."
+      "O perfil atual não foi encontrado e o e-mail da conta ainda não está confirmado."
     );
     error.status = 403;
     throw error;
@@ -124,33 +198,42 @@ async function ensureCurrentUidProfile(adminDb, authUser) {
     throw error;
   }
 
-  if (!legacy.snapshot) {
-    const error = new Error("Perfil da conta não encontrado no Firestore.");
-    error.status = 404;
-    throw error;
+  if (legacy.snapshot) {
+    const legacyData = legacy.snapshot.data() || {};
+
+    const migratedData = {
+      ...legacyData,
+      email,
+      migratedFromUid: legacy.snapshot.id,
+      migratedToUid: currentUid,
+      migrationMethod: legacy.method,
+      migratedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    };
+
+    await currentRef.set(migratedData, { merge: false });
+    const migratedSnapshot = await currentRef.get();
+
+    return {
+      snapshot: migratedSnapshot,
+      migrated: true,
+      createdFromAuth: false,
+      migratedFromUid: legacy.snapshot.id,
+      migrationMethod: legacy.method
+    };
   }
 
-  const legacyData = legacy.snapshot.data() || {};
-
-  // Copia o perfil para o UID REAL que o Firebase Authentication está usando.
-  // O documento antigo é preservado por segurança nesta primeira etapa.
-  const migratedData = {
-    ...legacyData,
-    email,
-    migratedFromUid: legacy.snapshot.id,
-    migratedToUid: currentUid,
-    migratedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp()
-  };
-
-  await currentRef.set(migratedData, { merge: false });
-
-  const migratedSnapshot = await currentRef.get();
+  // 3) Se realmente não houver perfil antigo, cria um perfil seguro para o UID real.
+  // Isso evita que uma conta válida e verificada fique eternamente sem users/{uid}.
+  // Nenhuma permissão especial é criada aqui: operatorEnabled permanece false.
+  const createdSnapshot = await createSafeProfileForCurrentAuth(adminDb, authUser);
 
   return {
-    snapshot: migratedSnapshot,
-    migrated: true,
-    migratedFromUid: legacy.snapshot.id
+    snapshot: createdSnapshot,
+    migrated: false,
+    createdFromAuth: true,
+    migratedFromUid: null,
+    migrationMethod: "created-from-auth"
   };
 }
 
@@ -164,7 +247,7 @@ export default async function handler(req, res) {
         ok: true,
         service: "TechLib Session API",
         configured: true,
-        version: "uid-profile-repair-v1"
+        version: "uid-profile-repair-v2"
       });
     } catch (error) {
       return send(res, 500, {
@@ -207,7 +290,6 @@ export default async function handler(req, res) {
     }
 
     const authUser = await adminAuth.getUser(decoded.uid);
-
     const repaired = await ensureCurrentUidProfile(adminDb, authUser);
     const profileData = repaired.snapshot.data() || {};
     const profile = normalizeProfile(decoded.uid, authUser, profileData);
@@ -223,7 +305,9 @@ export default async function handler(req, res) {
       },
       repair: {
         migrated: repaired.migrated,
-        migratedFromUid: repaired.migratedFromUid
+        createdFromAuth: repaired.createdFromAuth,
+        migratedFromUid: repaired.migratedFromUid,
+        migrationMethod: repaired.migrationMethod
       }
     });
   } catch (error) {
