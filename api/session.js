@@ -1,6 +1,6 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
@@ -33,21 +33,124 @@ function getBearerToken(req) {
   return header.slice(7).trim();
 }
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function normalizeProfile(uid, authUser, data = {}) {
   const baseRole = data.baseRole === "Professor" ? "Professor" : "Aluno";
   const allowedRoles = ["Aluno", "Professor", "Bibliotecário", "Administrador"];
-  const role = allowedRoles.includes(data.role)
-    ? data.role
-    : baseRole;
+  const role = allowedRoles.includes(data.role) ? data.role : baseRole;
 
   return {
     uid,
     name: String(data.name || authUser.displayName || "").trim(),
-    email: String(data.email || authUser.email || "").toLowerCase(),
+    email: normalizeEmail(data.email || authUser.email),
     baseRole,
     role,
     isActive: data.isActive !== false,
     operatorEnabled: data.operatorEnabled === true
+  };
+}
+
+async function findLegacyProfileByEmail(adminDb, email, currentUid) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return { snapshot: null, ambiguous: false };
+  }
+
+  // Os perfis do TechLib armazenam o e-mail normalizado em minúsculas.
+  // Buscamos até 3 resultados apenas para detectar duplicidade e evitar
+  // migrar automaticamente um perfil ambíguo.
+  const querySnapshot = await adminDb
+    .collection("users")
+    .where("email", "==", normalizedEmail)
+    .limit(3)
+    .get();
+
+  const candidates = querySnapshot.docs.filter((doc) => doc.id !== currentUid);
+
+  if (candidates.length === 0) {
+    return { snapshot: null, ambiguous: false };
+  }
+
+  if (candidates.length > 1) {
+    return { snapshot: null, ambiguous: true };
+  }
+
+  return { snapshot: candidates[0], ambiguous: false };
+}
+
+async function ensureCurrentUidProfile(adminDb, authUser) {
+  const currentUid = authUser.uid;
+  const currentRef = adminDb.doc(`users/${currentUid}`);
+  const currentSnapshot = await currentRef.get();
+
+  if (currentSnapshot.exists) {
+    return {
+      snapshot: currentSnapshot,
+      migrated: false,
+      migratedFromUid: null
+    };
+  }
+
+  const email = normalizeEmail(authUser.email);
+
+  if (!email) {
+    const error = new Error(
+      "A conta autenticada não possui e-mail. Não foi possível localizar um perfil antigo."
+    );
+    error.status = 404;
+    throw error;
+  }
+
+  // A migração automática só é feita com e-mail confirmado. Isso impede que
+  // uma conta não verificada tente assumir um perfil antigo apenas por e-mail.
+  if (authUser.emailVerified !== true) {
+    const error = new Error(
+      "O perfil atual não foi encontrado e o e-mail da conta ainda não está confirmado. Confirme o e-mail antes de reparar o perfil."
+    );
+    error.status = 403;
+    throw error;
+  }
+
+  const legacy = await findLegacyProfileByEmail(adminDb, email, currentUid);
+
+  if (legacy.ambiguous) {
+    const error = new Error(
+      "Foram encontrados vários perfis antigos com este e-mail. A migração automática foi interrompida para evitar conflito."
+    );
+    error.status = 409;
+    throw error;
+  }
+
+  if (!legacy.snapshot) {
+    const error = new Error("Perfil da conta não encontrado no Firestore.");
+    error.status = 404;
+    throw error;
+  }
+
+  const legacyData = legacy.snapshot.data() || {};
+
+  // Copia o perfil para o UID REAL que o Firebase Authentication está usando.
+  // O documento antigo é preservado por segurança nesta primeira etapa.
+  const migratedData = {
+    ...legacyData,
+    email,
+    migratedFromUid: legacy.snapshot.id,
+    migratedToUid: currentUid,
+    migratedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  };
+
+  await currentRef.set(migratedData, { merge: false });
+
+  const migratedSnapshot = await currentRef.get();
+
+  return {
+    snapshot: migratedSnapshot,
+    migrated: true,
+    migratedFromUid: legacy.snapshot.id
   };
 }
 
@@ -60,7 +163,8 @@ export default async function handler(req, res) {
       return send(res, 200, {
         ok: true,
         service: "TechLib Session API",
-        configured: true
+        configured: true,
+        version: "uid-profile-repair-v1"
       });
     } catch (error) {
       return send(res, 500, {
@@ -78,6 +182,7 @@ export default async function handler(req, res) {
 
   try {
     const token = getBearerToken(req);
+
     if (!token) {
       return send(res, 401, {
         ok: false,
@@ -90,6 +195,7 @@ export default async function handler(req, res) {
     const adminDb = getFirestore(app);
 
     let decoded;
+
     try {
       decoded = await adminAuth.verifyIdToken(token);
     } catch (error) {
@@ -100,42 +206,37 @@ export default async function handler(req, res) {
       });
     }
 
-    const [authUser, profileSnapshot] = await Promise.all([
-      adminAuth.getUser(decoded.uid),
-      adminDb.doc(`users/${decoded.uid}`).get()
-    ]);
+    const authUser = await adminAuth.getUser(decoded.uid);
 
-    if (!profileSnapshot.exists) {
-      return send(res, 404, {
-        ok: false,
-        error: "Perfil da conta não encontrado no Firestore.",
-        auth: {
-          uid: decoded.uid,
-          email: String(authUser.email || decoded.email || "").toLowerCase(),
-          emailVerified: authUser.emailVerified === true
-        }
-      });
-    }
-
-    const profile = normalizeProfile(
-      decoded.uid,
-      authUser,
-      profileSnapshot.data() || {}
-    );
+    const repaired = await ensureCurrentUidProfile(adminDb, authUser);
+    const profileData = repaired.snapshot.data() || {};
+    const profile = normalizeProfile(decoded.uid, authUser, profileData);
 
     return send(res, 200, {
       ok: true,
       profile,
       auth: {
+        uid: decoded.uid,
+        email: normalizeEmail(authUser.email || decoded.email),
         emailVerified: authUser.emailVerified === true,
         operatorClaim: decoded.operator === true
+      },
+      repair: {
+        migrated: repaired.migrated,
+        migratedFromUid: repaired.migratedFromUid
       }
     });
   } catch (error) {
     console.error("TechLib session API:", error);
-    return send(res, 500, {
+
+    const status = Number(error.status) || 500;
+
+    return send(res, status, {
       ok: false,
-      error: "Não foi possível carregar a sessão pelo servidor. Verifique os logs da API no Vercel."
+      error:
+        status === 500
+          ? "Não foi possível carregar ou reparar a sessão pelo servidor. Verifique os logs da API no Vercel."
+          : error.message
     });
   }
 }
