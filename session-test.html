@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechLib - Teste de Sessão</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.5; }
+    .box { border: 1px solid #999; border-radius: 10px; padding: 18px; margin-top: 20px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #111; color: #eee; padding: 16px; border-radius: 8px; overflow: auto; }
+    button { padding: 10px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>TechLib - Teste da API de Sessão</h1>
+  <p>Esta página não altera permissões. Ela apenas verifica a conta já conectada no TechLib e consulta <code>/api/session</code>.</p>
+
+  <div class="box">
+    <strong>Status:</strong>
+    <div id="status">Aguardando autenticação...</div>
+  </div>
+
+  <div class="box">
+    <button id="retry" type="button">Testar novamente</button>
+    <pre id="result">Nenhum resultado ainda.</pre>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB46S94ee_c-00vExyjyRABDCEKHrr4Wy4",
+      authDomain: "techlib-e308a.firebaseapp.com",
+      projectId: "techlib-e308a",
+      storageBucket: "techlib-e308a.firebasestorage.app",
+      messagingSenderId: "63070344950",
+      appId: "1:63070344950:web:44f731360f3baaccbb3ed7",
+      measurementId: "G-4SS1CM5X4H"
+    };
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const retryBtn = document.getElementById("retry");
+
+    async function runTest(user) {
+      if (!user) {
+        statusEl.textContent = "Nenhuma conta conectada neste domínio. Entre no TechLib primeiro.";
+        resultEl.textContent = JSON.stringify({
+          ok: false,
+          error: "Nenhum usuário autenticado encontrado no navegador."
+        }, null, 2);
+        return;
+      }
+
+      statusEl.textContent = `Conta detectada: ${user.email || user.uid}. Consultando a API...`;
+      resultEl.textContent = "Consultando...";
+
+      try {
+        const token = await user.getIdToken(true);
+
+        const response = await fetch("/api/session", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          data = { ok: false, error: "A API não retornou JSON.", status: response.status };
+        }
+
+        statusEl.textContent = response.ok
+          ? "API de sessão respondeu com sucesso."
+          : `A API respondeu com erro HTTP ${response.status}.`;
+
+        resultEl.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        statusEl.textContent = "Falha ao consultar a API.";
+        resultEl.textContent = JSON.stringify({
+          ok: false,
+          error: error?.message || String(error)
+        }, null, 2);
+      }
+    }
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      runTest(user);
+    });
+
+    retryBtn.addEventListener("click", () => runTest(auth.currentUser || currentUser));
+  </script>
+</body>
+</html>
