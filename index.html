@@ -2057,6 +2057,224 @@ input[type="password"]:-webkit-autofill {
   caret-color: var(--text, #f4f7fb) !important;
 }
 
+
+/* =========================================================
+   RESPONSIVIDADE DESKTOP
+   Mantém o visual mobile atual e amplia apenas em telas maiores
+   ========================================================= */
+
+@media (min-width: 900px) {
+  body {
+    padding: 24px;
+  }
+
+  .app {
+    width: min(calc(100% - 48px), 1180px);
+    min-height: calc(100vh - 48px);
+    border-radius: 30px;
+    overflow: hidden;
+  }
+
+  .app-header {
+    min-height: 78px;
+    padding: 14px 28px;
+  }
+
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+  }
+
+  .brand-text strong {
+    font-size: 1.16rem;
+  }
+
+  .brand-text span {
+    font-size: 0.82rem;
+  }
+
+  .main {
+    padding: 28px 28px calc(var(--nav-height) + 44px);
+  }
+
+  .welcome-card {
+    padding: 32px;
+    border-radius: 28px;
+  }
+
+  .welcome-card h1 {
+    max-width: 680px;
+    font-size: clamp(1.8rem, 3vw, 2.35rem);
+  }
+
+  .welcome-card p {
+    max-width: 720px;
+    font-size: 1rem;
+  }
+
+  .search-box {
+    max-width: 760px;
+    grid-template-columns: 1fr 52px;
+    margin-top: 22px;
+  }
+
+  .quick-grid {
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .quick-card {
+    padding: 18px 16px;
+  }
+
+  .quick-card strong {
+    font-size: 1.08rem;
+  }
+
+  .quick-card span {
+    font-size: 0.82rem;
+  }
+
+  .section-block {
+    margin-top: 30px;
+  }
+
+  .section-title h2 {
+    font-size: 1.28rem;
+  }
+
+  .section-title p {
+    font-size: 0.88rem;
+  }
+
+  .horizontal-books {
+    grid-auto-columns: minmax(215px, 27%);
+    gap: 16px;
+    padding-bottom: 14px;
+  }
+
+  .cover {
+    min-height: 145px;
+  }
+
+  .book-mini-content {
+    padding: 15px;
+  }
+
+  .filter-stack {
+    grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.8fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .filter-stack > input {
+    grid-column: auto;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .book-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .book-row {
+    grid-template-columns: 92px 1fr;
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .book-row-cover {
+    min-height: 126px;
+  }
+
+  .content-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .content-card {
+    min-height: 100%;
+  }
+
+  .management-card {
+    padding: 20px;
+  }
+
+  .permission-user {
+    padding: 13px 14px;
+  }
+
+  .permission-actions {
+    max-width: 360px;
+  }
+
+  .permission-select {
+    max-width: 170px;
+  }
+
+  .book-form,
+  .content-editor {
+    padding: 18px;
+  }
+
+  .book-form-grid,
+  .content-editor-grid {
+    gap: 14px;
+  }
+
+  .account-card {
+    padding: 22px;
+  }
+
+  .avatar {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+  }
+
+  .bottom-nav {
+    width: min(calc(100% - 88px), 1090px);
+    bottom: 16px;
+    min-height: 70px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .nav-button {
+    min-width: 92px;
+    flex-basis: 92px;
+    font-size: 0.72rem;
+  }
+
+  .auth-sheet {
+    width: min(560px, calc(100% - 48px));
+  }
+}
+
+@media (min-width: 1200px) {
+  .app {
+    width: min(calc(100% - 64px), 1280px);
+  }
+
+  .main {
+    padding-left: 34px;
+    padding-right: 34px;
+  }
+
+  .horizontal-books {
+    grid-auto-columns: minmax(220px, 23%);
+  }
+
+  .bottom-nav {
+    width: min(calc(100% - 120px), 1160px);
+  }
+}
+
 </style>
 </head>
 <body>
