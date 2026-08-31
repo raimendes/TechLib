@@ -1,6 +1,4 @@
 <!DOCTYPE html>
-<!-- TechLib API Custom Claims | sem operadores fixos | 2026-08-25 -->
-
 
 <html lang="pt-BR">
 <head>
@@ -9,7 +7,6 @@
 <meta content="#1558d6" name="theme-color"/>
 <meta content="TechLib - Plataforma de gestão da biblioteca escolar." name="description"/>
 <title>TechLib</title>
-<!-- Fluxo de operador fixo por e-mail institucional: 2026-08-25 -->
 <style>
     :root {
       --primary: #1558d6;
@@ -1150,7 +1147,27 @@
       font-size: 0.75rem;
       font-weight: 750;
     }
-.test-buttons {
+
+    .future-home-card {
+      margin-top: 14px;
+      padding: 15px;
+      border: 1px dashed #9eb3d3;
+      border-radius: 18px;
+      background: var(--surface);
+    }
+
+    .future-home-card strong,
+    .future-home-card span {
+      display: block;
+    }
+
+    .future-home-card span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .test-buttons {
       grid-template-columns: repeat(2, 1fr);
     }
 
@@ -1383,680 +1400,6 @@
       cursor: not-allowed;
       opacity: 0.55;
     }
-
-    .content-toolbar {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 14px;
-    }
-
-    .content-editor {
-      display: grid;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface-2);
-    }
-
-    .content-editor-grid {
-      display: grid;
-      gap: 11px;
-    }
-
-    .content-editor label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 750;
-    }
-
-    .content-editor input,
-    .content-editor select,
-    .content-editor textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 11px 12px;
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
-      outline: none;
-    }
-
-    .content-editor textarea {
-      min-height: 110px;
-      resize: vertical;
-    }
-
-    .content-editor input:focus,
-    .content-editor select:focus,
-    .content-editor textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-soft);
-    }
-
-    .content-editor-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-    }
-
-    .content-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .content-card {
-      padding: 15px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface);
-      box-shadow: 0 7px 18px rgba(28, 46, 75, 0.05);
-    }
-
-    .content-card-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .content-card h3 {
-      margin: 0;
-      font-size: 1rem;
-      line-height: 1.25;
-    }
-
-    .content-card-meta {
-      margin-top: 5px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.45;
-    }
-
-    .content-card-description {
-      margin: 11px 0 0;
-      color: var(--text);
-      font-size: 0.84rem;
-      line-height: 1.55;
-      white-space: pre-line;
-    }
-
-    .content-card-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      margin-top: 13px;
-    }
-
-    .content-link {
-      display: inline-flex;
-      align-items: center;
-      min-height: 34px;
-      margin-top: 11px;
-      padding: 7px 10px;
-      border: 1px solid var(--border);
-      border-radius: 11px;
-      color: var(--primary);
-      font-size: 0.76rem;
-      font-weight: 800;
-      text-decoration: none;
-    }
-
-    .event-cover {
-      width: 72px;
-      height: 72px;
-      flex: 0 0 72px;
-      overflow: hidden;
-      border-radius: 14px;
-      background: var(--surface-2);
-    }
-
-    .event-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    @media (min-width: 680px) {
-      .content-editor-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .content-editor-grid .full-field {
-        grid-column: 1 / -1;
-      }
-    }
-
-
-    .permission-search {
-      display: grid;
-      gap: 8px;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid var(--border);
-    }
-
-    .permission-search label {
-      color: var(--text);
-      font-size: 0.8rem;
-      font-weight: 850;
-    }
-
-    .permission-search input {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 10px 12px;
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
-      outline: none;
-    }
-
-    .permission-search input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-soft);
-    }
-
-    .permission-search-help {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.72rem;
-      line-height: 1.45;
-    }
-
-    .permission-section-title {
-      margin: 14px 0 7px;
-      color: var(--text);
-      font-size: 0.82rem;
-      font-weight: 900;
-    }
-
-    .permission-result-summary {
-      margin: 8px 0 0;
-      color: var(--muted);
-      font-size: 0.72rem;
-    }
-
-
-    .user-status-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      align-items: center;
-      margin-top: 5px;
-    }
-
-    .user-status-badge {
-      display: inline-flex !important;
-      align-items: center;
-      width: fit-content;
-      margin: 0 !important;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 0.67rem !important;
-      font-weight: 850;
-      line-height: 1;
-    }
-
-    .user-status-badge.active {
-      background: rgba(34, 139, 94, 0.13);
-      color: var(--success);
-    }
-
-    .user-status-badge.inactive {
-      background: rgba(194, 62, 62, 0.13);
-      color: var(--danger);
-    }
-
-    .permission-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-      max-width: 250px;
-    }
-
-    .permission-actions .permission-select {
-      min-width: 135px;
-    }
-
-    .small-button.danger-outline {
-      border-color: rgba(194, 62, 62, 0.35);
-      color: var(--danger);
-    }
-
-    .small-button.success-outline {
-      border-color: rgba(34, 139, 94, 0.35);
-      color: var(--success);
-    }
-
-
-    .book-import-box {
-      margin-top: 14px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--surface-soft);
-    }
-
-    .book-import-box h4 {
-      margin: 0 0 6px;
-      font-size: 0.88rem;
-      color: var(--text);
-    }
-
-    .book-import-box p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.74rem;
-      line-height: 1.5;
-    }
-
-    .book-import-file {
-      display: block;
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px;
-      border: 1px dashed var(--border);
-      border-radius: 13px;
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
-    }
-
-    .book-import-summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      margin-top: 12px;
-    }
-
-    .book-import-chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 0.7rem;
-      font-weight: 800;
-    }
-
-    .book-import-preview {
-      margin-top: 12px;
-      max-height: 390px;
-      overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      background: var(--surface);
-    }
-
-    .book-import-row {
-      display: grid;
-      gap: 5px;
-      padding: 11px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .book-import-row:last-child {
-      border-bottom: 0;
-    }
-
-    .book-import-row strong {
-      font-size: 0.78rem;
-      color: var(--text);
-    }
-
-    .book-import-row span {
-      color: var(--muted);
-      font-size: 0.7rem;
-      line-height: 1.4;
-    }
-
-    .book-import-status {
-      width: fit-content;
-      padding: 4px 7px;
-      border-radius: 999px;
-      font-size: 0.65rem !important;
-      font-weight: 850;
-      border: 1px solid var(--border);
-    }
-
-    .book-import-status.ready {
-      color: var(--success);
-    }
-
-    .book-import-status.duplicate {
-      color: var(--warning);
-    }
-
-    .book-import-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-
-    .updates-card {
-      margin-top: 18px;
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface);
-    }
-
-    .updates-card h3 {
-      margin: 0 0 5px;
-      color: var(--text);
-      font-size: 0.95rem;
-    }
-
-    .updates-date {
-      margin: 0 0 12px;
-      color: var(--muted);
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-
-    .updates-list {
-      margin: 0;
-      padding-left: 18px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.55;
-    }
-
-    .updates-list li + li {
-      margin-top: 5px;
-    }
-
-    .updates-history {
-      margin-top: 12px;
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-
-    .updates-history summary {
-      cursor: pointer;
-      color: var(--text);
-      font-size: 0.78rem;
-      font-weight: 850;
-      user-select: none;
-    }
-
-    .updates-history[open] summary {
-      margin-bottom: 12px;
-    }
-
-    .update-previous-item + .update-previous-item {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-    }
-
-    .update-previous-item strong {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text);
-      font-size: 0.75rem;
-    }
-
-
-    .admin-view-card {
-      margin-top: 14px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--surface);
-    }
-
-    .admin-view-card strong {
-      display: block;
-      margin-bottom: 5px;
-      color: var(--text);
-      font-size: 0.84rem;
-    }
-
-    .admin-view-card p {
-      margin: 0 0 10px;
-      color: var(--muted);
-      font-size: 0.72rem;
-      line-height: 1.5;
-    }
-
-    .admin-view-card select {
-      width: 100%;
-      min-height: 44px;
-      padding: 9px 11px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface-soft);
-      color: var(--text);
-      font: inherit;
-      font-weight: 750;
-    }
-
-    .admin-view-card select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(88, 160, 255, 0.18);
-    }
-
-    .admin-view-card select option {
-      background: #10233b;
-      color: #f5f8ff;
-    }
-
-
-    .profile-edit-card {
-      margin-top: 12px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--surface);
-    }
-
-    .profile-edit-card h3 {
-      margin: 0 0 5px;
-      color: var(--text);
-      font-size: 0.9rem;
-    }
-
-    .profile-edit-card p {
-      margin: 0 0 12px;
-      color: var(--muted);
-      font-size: 0.72rem;
-      line-height: 1.5;
-    }
-
-    .profile-edit-grid {
-      display: grid;
-      gap: 10px;
-    }
-
-    .profile-edit-grid label {
-      display: grid;
-      gap: 6px;
-      color: var(--text);
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-
-    .profile-edit-grid input {
-      width: 100%;
-      min-height: 44px;
-      padding: 10px 11px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface-soft);
-      color: var(--text);
-      font: inherit;
-    }
-
-    .profile-edit-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .pending-email-card {
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--surface-soft);
-    }
-
-    .pending-email-card strong {
-      display: block;
-      margin-bottom: 5px;
-      color: var(--text);
-      font-size: 0.78rem;
-    }
-
-    .pending-email-card span {
-      display: block;
-      color: var(--muted);
-      font-size: 0.7rem;
-      line-height: 1.45;
-    }
-
-    .pending-email-card button {
-      margin-top: 10px;
-    }
-
-
-    .verification-wait-card {
-      margin-top: 8px;
-      padding: 20px 16px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface);
-      text-align: center;
-    }
-
-    .verification-wait-icon {
-      width: 58px;
-      height: 58px;
-      margin: 0 auto 12px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface-soft);
-      color: var(--text);
-      font-size: 1.4rem;
-      font-weight: 900;
-    }
-
-    .verification-wait-card h3 {
-      margin: 0 0 8px;
-      color: var(--text);
-      font-size: 1rem;
-    }
-
-    .verification-wait-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.55;
-    }
-
-    .verification-wait-email {
-      display: inline-block;
-      margin-top: 9px;
-      padding: 6px 9px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface-soft);
-      color: var(--text);
-      font-size: 0.72rem;
-      font-weight: 800;
-      word-break: break-all;
-    }
-
-    .verification-wait-actions {
-      display: grid;
-      gap: 9px;
-      margin-top: 16px;
-    }
-
-    .verification-wait-note {
-      margin-top: 14px !important;
-      font-size: 0.69rem !important;
-    }
-
-
-
-    /* Correção de contraste dos campos de autenticação */
-    .email-composer input,
-    #emailPrefixInput,
-    #passwordInput,
-    #confirmPasswordInput,
-    #nameInput {
-      color: var(--text) !important;
-      caret-color: var(--text) !important;
-    }
-
-    .email-composer input::placeholder,
-    #emailPrefixInput::placeholder,
-    #passwordInput::placeholder,
-    #confirmPasswordInput::placeholder,
-    #nameInput::placeholder {
-      color: var(--muted) !important;
-      opacity: 1;
-    }
-
-    /* Mantém o texto legível no preenchimento automático do Chrome/Android */
-    .email-composer input:-webkit-autofill,
-    #emailPrefixInput:-webkit-autofill,
-    #passwordInput:-webkit-autofill,
-    #confirmPasswordInput:-webkit-autofill,
-    #nameInput:-webkit-autofill {
-      -webkit-text-fill-color: var(--text) !important;
-      caret-color: var(--text) !important;
-      transition: background-color 9999s ease-out 0s;
-    }
-
-
-/* Correção definitiva de contraste do login */
-.auth-form input,
-.auth-card input,
-#authModal input,
-input[type="email"],
-input[type="password"] {
-  color: var(--text, #f4f7fb) !important;
-  caret-color: var(--text, #f4f7fb) !important;
-}
-
-.auth-form input::placeholder,
-.auth-card input::placeholder,
-#authModal input::placeholder,
-input[type="email"]::placeholder,
-input[type="password"]::placeholder {
-  color: var(--muted, #aebbd0) !important;
-  opacity: 1;
-}
-
-.auth-form input:-webkit-autofill,
-.auth-card input:-webkit-autofill,
-#authModal input:-webkit-autofill,
-input[type="email"]:-webkit-autofill,
-input[type="password"]:-webkit-autofill {
-  -webkit-text-fill-color: var(--text, #f4f7fb) !important;
-  caret-color: var(--text, #f4f7fb) !important;
-}
-
 </style>
 </head>
 <body>
@@ -2109,6 +1452,10 @@ input[type="password"]:-webkit-autofill {
 </div>
 <div class="horizontal-books" id="featuredBooks"></div>
 </section>
+<section class="future-home-card">
+<strong>Espaço da Távola</strong>
+<span>Área reservada para uma implementação futura de atas, registros e documentos.</span>
+</section>
 <section class="section-block">
 <div class="info-banner">
 <div class="info-icon">i</div>
@@ -2155,19 +1502,23 @@ input[type="password"]:-webkit-autofill {
 <div class="section-title">
 <div>
 <h2>Távola</h2>
-<p>Atas, registros e documentos organizados pelos alunos operadores.</p>
+<p>Espaço reservado para uma implementação futura.</p>
 </div>
 </div>
-<div id="tavolaContent"></div>
+<div class="empty-state">
+          Esta área será destinada futuramente aos registros, atas e documentos da Távola.
+        </div>
 </section>
 <section class="view" id="view-events">
 <div class="section-title">
 <div>
 <h2>Eventos da escola</h2>
-<p>Divulgação e acompanhamento das atividades escolares.</p>
+<p>Informações e registros dos eventos escolares.</p>
 </div>
 </div>
-<div id="eventsContent"></div>
+<div class="empty-state">
+          Esta área será destinada à divulgação e ao acompanhamento dos eventos da escola.
+        </div>
 </section>
 <section class="view" id="view-management">
 <div class="section-title">
@@ -2234,7 +1585,7 @@ input[type="password"]:-webkit-autofill {
 <span class="role-icon">P</span>
 <span>
 <strong>Professor</strong>
-<span>@educar.rn.gov.br</span>
+<span>@educar.gov.rn.br</span>
 </span>
 <span class="role-arrow">›</span>
 </button>
@@ -2242,12 +1593,11 @@ input[type="password"]:-webkit-autofill {
 <span class="role-icon">A</span>
 <span>
 <strong>Aluno</strong>
-<span>@estudante.rn.gov.br</span>
+<span>@estudante.gov.rn.br</span>
 </span>
 <span class="role-arrow">›</span>
 </button>
 </div>
-
 </div>
 <form class="auth-form hidden" id="authForm">
 <div class="profile-summary">
@@ -2262,7 +1612,7 @@ input[type="password"]:-webkit-autofill {
           E-mail institucional
           <div class="email-composer">
 <input autocomplete="username" id="emailPrefixInput" inputmode="email" placeholder="seu.usuario" type="text"/>
-<span class="email-domain" id="emailDomain">@educar.rn.gov.br</span>
+<span class="email-domain" id="emailDomain">@educar.gov.rn.br</span>
 </div>
 </label>
 <label>
@@ -2283,7 +1633,6 @@ input[type="password"]:-webkit-autofill {
 </p>
 </section>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script type="module">import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import {
   getAuth,
@@ -2292,12 +1641,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   signOut,
-  onAuthStateChanged,
-  reload,
-  getIdToken,
-  getIdTokenResult,
-  updateProfile,
-  verifyBeforeUpdateEmail
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import {
   getFirestore,
@@ -2306,15 +1650,13 @@ import {
   addDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   getDoc,
   query,
   where,
   onSnapshot,
   serverTimestamp,
   Timestamp,
-  runTransaction,
-  writeBatch
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 /*
@@ -2323,71 +1665,20 @@ import {
   e substitua o objeto abaixo pelo firebaseConfig fornecido pelo Firebase.
 */
 const firebaseConfig = {
-  apiKey: "AIzaSyB46S94ee_c-00vExyjyRABDCEKHrr4Wy4",
-  authDomain: "techlib-e308a.firebaseapp.com",
-  projectId: "techlib-e308a",
-  storageBucket: "techlib-e308a.firebasestorage.app",
-  messagingSenderId: "63070344950",
-  appId: "1:63070344950:web:44f731360f3baaccbb3ed7",
-  measurementId: "G-4SS1CM5X4H"
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI.firebaseapp.com",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI.firebasestorage.app",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI"
 };
 
 const ROLE_DOMAINS = {
-  Professor: "educar.rn.gov.br",
-  Aluno: "estudante.rn.gov.br"
+  Professor: "educar.gov.rn.br",
+  Aluno: "estudante.gov.rn.br"
 };
 
-// Acesso de Aluno operador via Firebase Authentication Custom Claims.
-// A API segura em /api/operator-access concede ou remove a claim operator.
-function hasOperatorClaim() {
-  return state.authClaims?.operator === true;
-}
-
-async function loadAuthClaims(firebaseUser = auth?.currentUser, forceRefresh = false) {
-  if (LOCAL_MODE || !firebaseUser) {
-    state.authClaims = {};
-    return state.authClaims;
-  }
-
-  const tokenResult = await getIdTokenResult(firebaseUser, forceRefresh);
-  state.authClaims = tokenResult?.claims || {};
-  return state.authClaims;
-}
-
-async function callOperatorAccessApi(uid, grant) {
-  if (LOCAL_MODE) return { ok: true, operator: Boolean(grant) };
-  if (!auth?.currentUser) throw new Error("Entre novamente na conta administrativa.");
-
-  const idToken = await getIdToken(auth.currentUser, true);
-  const response = await fetch("/api/operator-access", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${idToken}`
-    },
-    body: JSON.stringify({
-      action: grant ? "grant" : "revoke",
-      uid
-    })
-  });
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    throw new Error(payload.error || `A API respondeu com status ${response.status}.`);
-  }
-
-  return payload;
-}
-
-
 const BOOK_CONDITIONS = [
-  "Não informado",
   "Novo",
   "Ótimo",
   "Bom",
@@ -2397,7 +1688,6 @@ const BOOK_CONDITIONS = [
 ];
 
 const BOOK_DAMAGES = [
-  "Não informado",
   "Sem avarias",
   "Capa danificada",
   "Páginas rasgadas",
@@ -2416,16 +1706,12 @@ const firebaseConfigured = Object.values(firebaseConfig).every(value => {
   return text && !text.includes("COLE_AQUI");
 });
 
-const LOCAL_MODE = !firebaseConfigured;
-
 let app = null;
 let auth = null;
 let db = null;
 
 const unsubscribers = {
   books: null,
-  events: null,
-  tavola: null,
   user: null,
   loans: null,
   reservations: null,
@@ -2433,37 +1719,17 @@ const unsubscribers = {
 };
 
 const state = {
-  currentView: sessionStorage.getItem("techlibCurrentView") || "home",
+  currentView: "home",
   authMode: "login",
   selectedRole: null,
   bookFormOpen: false,
   editingBookId: null,
   authUser: null,
-  authClaims: {},
   currentUser: null,
-  localMode: LOCAL_MODE,
-  adminViewRole: sessionStorage.getItem("techlibAdminViewRole") || "",
   books: [],
   loans: [],
   reservations: [],
-  events: [],
-  tavolaRecords: [],
   users: [],
-  eventFormOpen: false,
-  editingEventId: null,
-  tavolaFormOpen: false,
-  editingTavolaId: null,
-  studentPermissionSearch: "",
-  bookImportRows: [],
-  bookImportFileName: "",
-  bookImportBusy: false,
-  bookImportMessage: "",
-  profileEditOpen: false,
-  registrationInProgress: false,
-  pendingRegistrationName: "",
-  pendingRegistrationRole: "",
-  eventsLoaded: false,
-  tavolaLoaded: false,
   lastAccessSignature: "",
   theme: localStorage.getItem("techlibThemeV2") || "dark",
   booksLoaded: false,
@@ -2490,8 +1756,6 @@ const elements = {
   catalogCount: document.getElementById("catalogCount"),
   bookList: document.getElementById("bookList"),
   loanContent: document.getElementById("loanContent"),
-  tavolaContent: document.getElementById("tavolaContent"),
-  eventsContent: document.getElementById("eventsContent"),
   profileContent: document.getElementById("profileContent"),
   managementContent: document.getElementById("managementContent"),
   authBackdrop: document.getElementById("authBackdrop"),
@@ -2531,11 +1795,6 @@ function sanitizeCoverUrl(value) {
   const url = String(value || "").trim();
   if (!url) return "";
   return /^(https?:\/\/|data:image\/)/i.test(url) ? url : "";
-}
-
-function sanitizeExternalUrl(value) {
-  const url = String(value || "").trim();
-  return /^https?:\/\//i.test(url) ? url : "";
 }
 
 function normalize(value) {
@@ -2599,352 +1858,69 @@ function renderSelectOptions(options, selected) {
 
 function normalizeBookSnapshot(snapshot) {
   const data = snapshot.data();
-  const parsedQuantity = Number(data.quantity);
   return {
     id: snapshot.id,
     title: String(data.title || "").trim(),
     author: String(data.author || "").trim(),
     genre: String(data.genre || "").trim(),
-    quantity: Number.isInteger(parsedQuantity) && parsedQuantity >= 1 ? parsedQuantity : null,
+    quantity: Math.max(1, Number(data.quantity) || 1),
     loanedCount: Math.max(0, Number(data.loanedCount) || 0),
     reservedCount: Math.max(0, Number(data.reservedCount) || 0),
     cover: sanitizeCoverUrl(data.cover),
-    condition: BOOK_CONDITIONS.includes(data.condition) ? data.condition : "Não informado",
-    damage: BOOK_DAMAGES.includes(data.damage) ? data.damage : "Não informado"
+    condition: BOOK_CONDITIONS.includes(data.condition) ? data.condition : "Bom",
+    damage: BOOK_DAMAGES.includes(data.damage) ? data.damage : "Sem avarias"
   };
-}
-
-
-function hasValidUserName(user) {
-  const rawName = String(user?.name || "").trim();
-  const emailPrefix = String(user?.email || "").split("@")[0].trim();
-
-  if (!rawName) return false;
-  if (["usuário", "usuario"].includes(rawName.toLowerCase())) return false;
-  if (rawName === emailPrefix) return false;
-  if (/^\d+$/.test(rawName)) return false;
-
-  return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(rawName);
-}
-
-function getUserVisibleName(user) {
-  return hasValidUserName(user)
-    ? String(user.name).trim()
-    : "Nome ainda não informado";
 }
 
 function normalizeUserSnapshot(snapshot) {
   const data = snapshot.data();
-  const baseRole = data.baseRole === "Professor" ? "Professor" : "Aluno";
-
-  let role = baseRole;
-  if (baseRole === "Professor" && ["Professor", "Bibliotecário", "Administrador"].includes(data.role)) {
-    role = data.role;
-  }
-
   return {
     uid: snapshot.id,
-    name: String(data.name || "").trim(),
+    name: String(data.name || "Usuário").trim(),
     email: String(data.email || "").toLowerCase(),
-    baseRole,
-    role,
-    operatorEnabled: data.operatorEnabled === true,
-    isActive: data.isActive !== false
+    baseRole: data.baseRole === "Professor" ? "Professor" : "Aluno",
+    role: ["Aluno", "Professor", "Bibliotecário", "Administrador"].includes(data.role)
+      ? data.role
+      : data.baseRole === "Professor" ? "Professor" : "Aluno",
+    canManageCollection: Boolean(data.canManageCollection)
   };
 }
 
-function isActiveUser(user = state.currentUser) {
-  return Boolean(user && user.isActive !== false);
-}
-
 function isVerifiedUser() {
-  if (LOCAL_MODE) return Boolean(state.currentUser?.emailVerified);
   return Boolean(state.authUser?.emailVerified);
 }
 
-const ADMIN_VIEW_ROLES = ["Administrador", "Bibliotecário", "Professor", "Aluno"];
-
-function isActualAdministrator(user = state.currentUser) {
-  return Boolean(user && user.role === "Administrador");
-}
-
-function getEffectiveAccessUser(user = state.currentUser) {
-  if (!user) return null;
-
-  const isCurrentUser = user.uid === state.currentUser?.uid;
-  const selectedRole = isCurrentUser && isActualAdministrator(state.currentUser)
-    ? state.adminViewRole
-    : "";
-
-  if (!ADMIN_VIEW_ROLES.includes(selectedRole)) return user;
-
-  if (selectedRole === "Administrador") {
-    return { ...user, baseRole: "Professor", role: "Administrador" };
-  }
-
-  if (selectedRole === "Bibliotecário") {
-    return { ...user, baseRole: "Professor", role: "Bibliotecário" };
-  }
-
-  if (selectedRole === "Professor") {
-    return { ...user, baseRole: "Professor", role: "Professor" };
-  }
-
-  return { ...user, baseRole: "Aluno", role: "Aluno" };
-}
-
-function getEffectiveRole(user = state.currentUser) {
-  return getEffectiveAccessUser(user)?.role || "";
-}
-
-function hasServerOperatorAccess(user = state.currentUser) {
-  const effectiveUser = getEffectiveAccessUser(user);
-  return Boolean(
-    effectiveUser &&
-    effectiveUser.baseRole === "Aluno" &&
-    (
-      hasOperatorClaim() ||
-      effectiveUser.operatorEnabled === true
-    )
-  );
-}
-
 function canOperateLibrary(user = state.currentUser) {
-  const effectiveUser = getEffectiveAccessUser(user);
-  if (!effectiveUser || !isActiveUser(effectiveUser)) return false;
-
-  // A API grava a Custom Claim e também mantém operatorEnabled como espelho
-  // protegido no Firestore. Qualquer um dos dois confirma a autorização do aluno.
-  if (hasServerOperatorAccess(effectiveUser)) return true;
-
-  return ["Bibliotecário", "Administrador"].includes(effectiveUser.role);
-}
-
-function getOperationalStatusMessage(user = state.currentUser) {
-  const role = getEffectiveRole(user);
-  if (role === "Administrador") return "Acesso de Administrador ativo.";
-  if (role === "Bibliotecário") return "Acesso de Bibliotecário ativo.";
-  if (hasServerOperatorAccess(user)) return "Acesso de aluno operador ativo.";
-  return "Conta conectada ao TechLib.";
+  if (!user || !isVerifiedUser()) return false;
+  return (
+    user.role === "Administrador" ||
+    user.role === "Bibliotecário" ||
+    user.canManageCollection === true
+  );
 }
 
 function canManageUsers(user = state.currentUser) {
-  const effectiveUser = getEffectiveAccessUser(user);
-  return Boolean(
-    effectiveUser &&
-    isActiveUser(effectiveUser) &&
-    isVerifiedUser() &&
-    (
-      effectiveUser.role === "Administrador" ||
-      effectiveUser.role === "Bibliotecário"
-    )
+  return canOperateLibrary(user) && (
+    user?.role === "Administrador" || user?.role === "Bibliotecário"
   );
 }
 
-function ensureOperatorAccess() {
-  if (!state.currentUser) {
-    alert("Entre na conta para utilizar esta função.");
-    return false;
-  }
-  if (!isActiveUser()) {
-    alert("Este perfil está desativado. Procure a administração ou a biblioteca.");
-    return false;
-  }
-  if (canOperateLibrary()) return true;
-  alert("Você não possui permissão de aluno operador para utilizar esta função.");
-  return false;
-}
-
 function ensureVerified() {
-  if (!isActiveUser()) {
-    alert("Este perfil está desativado. Procure a administração ou a biblioteca.");
-    return false;
-  }
-
-  // A autorização de Aluno operador é concedida somente pela API.
-  // A Custom Claim é a fonte principal e operatorEnabled é o espelho protegido
-  // para evitar falhas de propagação do token.
-  if (hasServerOperatorAccess()) return true;
   if (isVerifiedUser()) return true;
-
   alert("Confirme o e-mail institucional antes de realizar esta operação.");
   return false;
 }
 
 function isStudentUser(user = state.currentUser) {
-  return getEffectiveAccessUser(user)?.baseRole === "Aluno";
+  return user?.baseRole === "Aluno";
 }
 
 function isProfessorUser(user = state.currentUser) {
-  return getEffectiveAccessUser(user)?.baseRole === "Professor";
-}
-
-
-function displayBookField(value) {
-  const text = String(value || "").trim();
-  return text || "Não informado";
-}
-
-function formatBookQuantity(book) {
-  return Number.isInteger(book?.quantity) && book.quantity >= 1
-    ? `${book.quantity} exemplar(es)`
-    : "Quantidade não informada";
-}
-
-function normalizeDuplicateValue(value) {
-  return normalize(value).replace(/\s+/g, " ").trim();
-}
-
-function findBookDuplicate(candidate, books = state.books, ignoreId = null) {
-  const title = normalizeDuplicateValue(candidate?.title);
-  const author = normalizeDuplicateValue(candidate?.author);
-
-  if (!title) return null;
-
-  const titleMatches = books.filter(book =>
-    book.id !== ignoreId &&
-    normalizeDuplicateValue(book.title) === title
-  );
-
-  if (!titleMatches.length) return null;
-
-  if (author) {
-    const exact = titleMatches.find(book =>
-      normalizeDuplicateValue(book.author) === author
-    );
-    if (exact) return { type: "exact", book };
-
-    const missingAuthor = titleMatches.find(book =>
-      !normalizeDuplicateValue(book.author)
-    );
-    if (missingAuthor) return { type: "possible", book: missingAuthor };
-
-    return null;
-  }
-
-  return { type: "possible", book: titleMatches[0] };
-}
-
-function normalizeSpreadsheetHeader(value) {
-  return normalizeDuplicateValue(value)
-    .replace(/[._-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getSpreadsheetValue(row, aliases) {
-  const entries = Object.entries(row || {});
-  for (const alias of aliases) {
-    const wanted = normalizeSpreadsheetHeader(alias);
-    const found = entries.find(([key]) => normalizeSpreadsheetHeader(key) === wanted);
-    if (found) return found[1];
-  }
-  return "";
-}
-
-function parseImportedQuantity(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return null;
-
-  const cleaned = raw
-    .replace(/\s+/g, "")
-    .replace(",", ".")
-    .replace(/[^\d.-]/g, "");
-
-  const number = Number(cleaned);
-  return Number.isInteger(number) && number >= 1 ? number : null;
-}
-
-function buildImportRows(rawRows) {
-  const previewBooks = [];
-
-  return rawRows.map((row, index) => {
-    const title = String(getSpreadsheetValue(row, [
-      "Nome do Livro", "Nome do livro", "Título", "Titulo", "Livro"
-    ]) ?? "").trim();
-
-    const author = String(getSpreadsheetValue(row, [
-      "Autor", "Autores"
-    ]) ?? "").trim();
-
-    const genre = String(getSpreadsheetValue(row, [
-      "Gênero ou CDU", "Genero ou CDU", "Gênero", "Genero", "CDU"
-    ]) ?? "").trim();
-
-    const rawQuantity = getSpreadsheetValue(row, [
-      "Quant. Disponível", "Quant. Disponivel", "Quantidade Disponível",
-      "Quantidade Disponivel", "Quantidade", "Quant disponível",
-      "Quant disponivel"
-    ]);
-
-    const quantity = parseImportedQuantity(rawQuantity);
-    const hasAnyData = Boolean(title || author || genre || String(rawQuantity ?? "").trim());
-
-    if (!hasAnyData) {
-      return {
-        index: index + 2,
-        title, author, genre, quantity,
-        status: "empty",
-        statusLabel: "Linha vazia",
-        importable: false
-      };
-    }
-
-    const candidate = { title, author, genre, quantity };
-    const existingDuplicate = findBookDuplicate(candidate, state.books);
-
-    if (existingDuplicate) {
-      return {
-        index: index + 2,
-        ...candidate,
-        status: existingDuplicate.type === "exact" ? "duplicate" : "possible",
-        statusLabel: existingDuplicate.type === "exact"
-          ? "Já existe no acervo"
-          : "Possível duplicata no acervo",
-        importable: false,
-        duplicateTitle: displayBookField(existingDuplicate.book.title)
-      };
-    }
-
-    const fileDuplicate = findBookDuplicate(candidate, previewBooks);
-    if (fileDuplicate) {
-      return {
-        index: index + 2,
-        ...candidate,
-        status: fileDuplicate.type === "exact" ? "duplicate" : "possible",
-        statusLabel: fileDuplicate.type === "exact"
-          ? "Duplicata na própria planilha"
-          : "Possível duplicata na própria planilha",
-        importable: false,
-        duplicateTitle: displayBookField(fileDuplicate.book.title)
-      };
-    }
-
-    previewBooks.push({
-      id: `preview-${index}`,
-      title, author, genre, quantity
-    });
-
-    return {
-      index: index + 2,
-      ...candidate,
-      status: "ready",
-      statusLabel: quantity === null
-        ? "Pronto para importar • quantidade não informada"
-        : "Pronto para importar",
-      importable: true
-    };
-  });
+  return user?.baseRole === "Professor";
 }
 
 function getAvailableCopies(book) {
-  if (
-    !book ||
-    book.condition === "Inutilizável" ||
-    !Number.isInteger(book.quantity) ||
-    book.quantity < 1
-  ) return 0;
-
+  if (!book || book.condition === "Inutilizável") return 0;
   return Math.max(0, book.quantity - book.loanedCount - book.reservedCount);
 }
 
@@ -2986,550 +1962,6 @@ function ensureFirebaseReady() {
   return false;
 }
 
-
-const LOCAL_STORAGE_KEYS = {
-  books: "techlibLocalBooksV3",
-  loans: "techlibLocalLoansV3",
-  reservations: "techlibLocalReservationsV3",
-  events: "techlibLocalEventsV3",
-  tavola: "techlibLocalTavolaV3",
-  users: "techlibLocalUsersV3",
-  session: "techlibLocalSessionV3"
-};
-
-function localId(prefix) {
-  if (globalThis.crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function localTimestamp() {
-  return new Date().toISOString();
-}
-
-function readLocalArray(key) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(value) ? value : [];
-  } catch {
-    return [];
-  }
-}
-
-function getDefaultLocalUsers() {
-  return [];
-}
-
-const LEGACY_TEST_USER_IDS = new Set([
-  "test-professor",
-  "test-student",
-  "test-librarian",
-  "test-admin",
-  "test-authorized-student"
-]);
-
-function persistLocalData() {
-  if (!LOCAL_MODE) return;
-  localStorage.setItem(LOCAL_STORAGE_KEYS.books, JSON.stringify(state.books));
-  localStorage.setItem(LOCAL_STORAGE_KEYS.loans, JSON.stringify(state.loans));
-  localStorage.setItem(LOCAL_STORAGE_KEYS.reservations, JSON.stringify(state.reservations));
-  localStorage.setItem(LOCAL_STORAGE_KEYS.events, JSON.stringify(state.events));
-  localStorage.setItem(LOCAL_STORAGE_KEYS.tavola, JSON.stringify(state.tavolaRecords));
-  localStorage.setItem(LOCAL_STORAGE_KEYS.users, JSON.stringify(state.users));
-}
-
-function loadLocalData() {
-  const savedUsers = readLocalArray(LOCAL_STORAGE_KEYS.users)
-    .filter(user => !LEGACY_TEST_USER_IDS.has(user.uid));
-  const defaults = getDefaultLocalUsers();
-  const byUid = new Map(savedUsers.map(user => [user.uid, user]));
-
-  defaults.forEach(user => {
-    if (!byUid.has(user.uid)) byUid.set(user.uid, user);
-  });
-
-  state.users = [...byUid.values()].map(user => ({
-    ...user,
-    isActive: user.isActive !== false
-  }));
-  state.books = readLocalArray(LOCAL_STORAGE_KEYS.books);
-  state.loans = readLocalArray(LOCAL_STORAGE_KEYS.loans);
-  state.reservations = readLocalArray(LOCAL_STORAGE_KEYS.reservations);
-  state.events = readLocalArray(LOCAL_STORAGE_KEYS.events);
-  state.tavolaRecords = readLocalArray(LOCAL_STORAGE_KEYS.tavola);
-  state.booksLoaded = true;
-  state.eventsLoaded = true;
-  state.tavolaLoaded = true;
-  state.privateDataLoaded = true;
-  sortBooks();
-
-  const sessionUid = localStorage.getItem(LOCAL_STORAGE_KEYS.session);
-  if (sessionUid) {
-    const savedUser = state.users.find(user => user.uid === sessionUid);
-    if (savedUser) {
-      state.currentUser = { ...savedUser, emailVerified: true };
-      state.authUser = { uid: savedUser.uid, email: savedUser.email, emailVerified: true };
-    }
-  }
-}
-
-function refreshLocalState(message = "") {
-  persistLocalData();
-  sortBooks();
-  renderAll();
-  updateAccessState();
-  if (message) alert(message);
-}
-
-function localSaveEvent(event) {
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const title = String(data.get("title") || "").trim();
-  const date = String(data.get("date") || "").trim();
-  const time = String(data.get("time") || "").trim();
-  const location = String(data.get("location") || "").trim();
-  const description = String(data.get("description") || "").trim();
-  const imageUrl = sanitizeCoverUrl(data.get("imageUrl"));
-
-  if (!title || !date || !description) {
-    alert("Preencha o nome, a data e a descrição do evento.");
-    return;
-  }
-
-  const now = localTimestamp();
-  if (state.editingEventId) {
-    const record = state.events.find(item => item.id === state.editingEventId);
-    if (!record) return;
-    Object.assign(record, {
-      title, date, time, location, description, imageUrl,
-      updatedByUid: state.currentUser.uid,
-      updatedByName: state.currentUser.name,
-      updatedAt: now
-    });
-  } else {
-    state.events.unshift({
-      id: localId("event"),
-      title, date, time, location, description, imageUrl,
-      createdByUid: state.currentUser.uid,
-      createdByName: state.currentUser.name,
-      createdAt: now,
-      updatedAt: now
-    });
-  }
-
-  state.eventFormOpen = false;
-  state.editingEventId = null;
-  refreshLocalState("Evento salvo no modo local.");
-}
-
-function localRemoveEvent(eventId) {
-  const record = state.events.find(item => item.id === eventId);
-  if (!record || !confirm(`Excluir o evento "${record.title}"?`)) return;
-  state.events = state.events.filter(item => item.id !== eventId);
-  refreshLocalState();
-}
-
-function localSaveTavolaRecord(event) {
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const title = String(data.get("title") || "").trim();
-  const date = String(data.get("date") || "").trim();
-  const type = String(data.get("type") || "").trim();
-  const description = String(data.get("description") || "").trim();
-  const documentUrl = sanitizeExternalUrl(data.get("documentUrl"));
-  const validTypes = ["Ata", "Registro", "Comunicado", "Outro"];
-
-  if (!title || !date || !description || !validTypes.includes(type)) {
-    alert("Preencha corretamente o título, a data, o tipo e a descrição.");
-    return;
-  }
-
-  const now = localTimestamp();
-  if (state.editingTavolaId) {
-    const record = state.tavolaRecords.find(item => item.id === state.editingTavolaId);
-    if (!record) return;
-    Object.assign(record, {
-      title, date, type, description, documentUrl,
-      updatedByUid: state.currentUser.uid,
-      updatedByName: state.currentUser.name,
-      updatedAt: now
-    });
-  } else {
-    state.tavolaRecords.unshift({
-      id: localId("tavola"),
-      title, date, type, description, documentUrl,
-      createdByUid: state.currentUser.uid,
-      createdByName: state.currentUser.name,
-      createdAt: now,
-      updatedAt: now
-    });
-  }
-
-  state.tavolaFormOpen = false;
-  state.editingTavolaId = null;
-  refreshLocalState("Registro da Távola salvo no modo local.");
-}
-
-function localRemoveTavolaRecord(recordId) {
-  const record = state.tavolaRecords.find(item => item.id === recordId);
-  if (!record || !confirm(`Excluir o registro "${record.title}"?`)) return;
-  state.tavolaRecords = state.tavolaRecords.filter(item => item.id !== recordId);
-  refreshLocalState();
-}
-
-function localSaveBook(event) {
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const title = String(data.get("title") || "").trim();
-  const author = String(data.get("author") || "").trim();
-  const genre = String(data.get("genre") || "").trim();
-  const rawQuantity = String(data.get("quantity") ?? "").trim();
-  const quantity = rawQuantity ? Number(rawQuantity) : null;
-  const condition = String(data.get("condition") || "Não informado");
-  const damage = String(data.get("damage") || "Não informado");
-  const cover = sanitizeCoverUrl(data.get("cover"));
-  const editing = Boolean(state.editingBookId);
-
-  if (!editing && (!title || !author || !genre || !rawQuantity)) {
-    return alert("No cadastro manual, preencha Título, Autor, Gênero ou CDU e Quantidade.");
-  }
-
-  if (rawQuantity && (!Number.isInteger(quantity) || quantity < 1 || quantity > 999)) {
-    return alert("Informe uma quantidade válida entre 1 e 999.");
-  }
-
-  if (!BOOK_CONDITIONS.includes(condition) || !BOOK_DAMAGES.includes(damage)) {
-    return alert("Selecione um estado e uma situação válidos.");
-  }
-
-  const duplicate = findBookDuplicate(
-    { title, author, genre },
-    state.books,
-    state.editingBookId
-  );
-  if (duplicate) {
-    return alert(
-      duplicate.type === "exact"
-        ? `Já existe exemplar cadastrado para "${displayBookField(duplicate.book.title)}" com este autor. Edite o registro existente.`
-        : `Já existe um possível exemplar deste título no acervo. Confira o registro "${displayBookField(duplicate.book.title)}" antes de salvar.`
-    );
-  }
-
-  const now = localTimestamp();
-  if (editing) {
-    const book = state.books.find(item => item.id === state.editingBookId);
-    if (!book) return;
-    const occupied = Number(book.loanedCount || 0) + Number(book.reservedCount || 0);
-
-    if (quantity === null && occupied > 0) {
-      return alert("A quantidade não pode ficar sem informação enquanto houver empréstimo ou reserva.");
-    }
-    if (quantity !== null && quantity < occupied) {
-      return alert(`A quantidade não pode ser menor que os ${occupied} exemplar(es) ocupados.`);
-    }
-    if (condition === "Inutilizável" && occupied > 0) {
-      return alert("Não é possível marcar como inutilizável enquanto houver empréstimo ou reserva.");
-    }
-
-    Object.assign(book, {
-      title, author, genre, quantity, condition, damage, cover,
-      updatedBy: state.currentUser.uid,
-      updatedAt: now
-    });
-  } else {
-    state.books.push({
-      id: localId("book"),
-      title, author, genre, quantity,
-      loanedCount: 0,
-      reservedCount: 0,
-      condition, damage, cover,
-      createdBy: state.currentUser.uid,
-      createdAt: now,
-      updatedAt: now
-    });
-  }
-
-  state.bookFormOpen = false;
-  state.editingBookId = null;
-  refreshLocalState("Livro salvo no modo local.");
-}
-
-function localRemoveBook(bookId) {
-  const book = state.books.find(item => item.id === bookId);
-  if (!book) return;
-
-  if (
-    book.loanedCount ||
-    book.reservedCount ||
-    getBookPendingLoans(bookId).length ||
-    getBookPendingReservations(bookId).length
-  ) {
-    alert("Não é possível remover um livro com empréstimo, reserva ou solicitação pendente.");
-    return;
-  }
-
-  if (!confirm(`Remover o livro "${book.title}" do acervo?`)) return;
-  state.books = state.books.filter(item => item.id !== bookId);
-  refreshLocalState();
-}
-
-function localRequestLoan(bookId) {
-  if (!state.currentUser || !isStudentUser()) return;
-  if (getUserOpenLoan()) {
-    return alert("Você já possui um empréstimo ou solicitação em aberto.");
-  }
-
-  const book = state.books.find(item => item.id === bookId);
-  if (!book || getAvailableCopies(book) < 1) {
-    return alert("Este livro não está disponível.");
-  }
-
-  const now = localTimestamp();
-  state.loans.unshift({
-    id: localId("loan"),
-    bookId,
-    studentUid: state.currentUser.uid,
-    studentName: state.currentUser.name,
-    studentEmail: state.currentUser.email,
-    status: "pending",
-    renewed: false,
-    renewalRequested: false,
-    createdAt: now,
-    updatedAt: now
-  });
-
-  refreshLocalState("Solicitação enviada. Aguarde a confirmação de um operador.");
-  setView("loans");
-}
-
-function localCancelLoanRequest(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record || record.studentUid !== state.currentUser?.uid || record.status !== "pending") return;
-  record.status = "cancelled";
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localConfirmLoan(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record || record.status !== "pending") return;
-  const book = state.books.find(item => item.id === record.bookId);
-  if (!book || getAvailableCopies(book) < 1) {
-    return alert("Não há exemplar disponível para confirmar.");
-  }
-
-  const now = new Date();
-  book.loanedCount = Number(book.loanedCount || 0) + 1;
-  record.status = "active";
-  record.startDate = now.toISOString();
-  record.dueDate = addDays(now, 15).toISOString();
-  record.confirmedAt = now.toISOString();
-  record.confirmedByUid = state.currentUser.uid;
-  record.confirmedByName = state.currentUser.name;
-  record.updatedAt = now.toISOString();
-  refreshLocalState("Empréstimo confirmado por 15 dias.");
-}
-
-function localRejectLoan(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record || record.status !== "pending") return;
-  record.status = "rejected";
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localRequestRenewal(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (
-    !record ||
-    record.studentUid !== state.currentUser?.uid ||
-    record.status !== "active" ||
-    record.renewed ||
-    record.renewalRequested
-  ) return;
-
-  record.renewalRequested = true;
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localConfirmRenewal(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record || record.status !== "active" || record.renewed) return;
-  const dueDate = new Date(record.dueDate);
-  if (Number.isNaN(dueDate.getTime())) return alert("Data de devolução inválida.");
-
-  record.dueDate = addDays(dueDate, 15).toISOString();
-  record.renewed = true;
-  record.renewalRequested = false;
-  record.renewedAt = localTimestamp();
-  record.renewedByUid = state.currentUser.uid;
-  record.updatedAt = localTimestamp();
-  refreshLocalState("Renovação confirmada por mais 15 dias.");
-}
-
-function localRejectRenewal(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record) return;
-  record.renewalRequested = false;
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localReturnLoan(loanId) {
-  const record = state.loans.find(item => item.id === loanId);
-  if (!record || record.status !== "active") return;
-  const book = state.books.find(item => item.id === record.bookId);
-  if (book) book.loanedCount = Math.max(0, Number(book.loanedCount || 0) - 1);
-
-  record.status = "returned";
-  record.returnedAt = localTimestamp();
-  record.returnedByUid = state.currentUser.uid;
-  record.updatedAt = localTimestamp();
-  refreshLocalState("Devolução registrada e exemplar liberado.");
-}
-
-function localSaveReservation(event) {
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const bookId = String(data.get("bookId") || "");
-  const className = String(data.get("className") || "").trim();
-  const quantity = Number(data.get("quantity"));
-  const reservationDate = String(data.get("reservationDate") || "");
-  const notes = String(data.get("notes") || "").trim();
-  const book = state.books.find(item => item.id === bookId);
-
-  if (!book || !className || !reservationDate) return alert("Preencha os campos obrigatórios.");
-  if (!Number.isInteger(quantity) || quantity < 1) return alert("Informe uma quantidade válida.");
-  if (quantity > getAvailableCopies(book)) return alert("A quantidade solicitada é maior que a disponível.");
-  if (reservationDate < todayInputValue()) return alert("Selecione uma data atual ou futura.");
-
-  const now = localTimestamp();
-  state.reservations.unshift({
-    id: localId("reservation"),
-    bookId,
-    teacherUid: state.currentUser.uid,
-    teacherName: state.currentUser.name,
-    teacherEmail: state.currentUser.email,
-    className,
-    quantity,
-    reservationDate,
-    notes,
-    status: "pending",
-    createdAt: now,
-    updatedAt: now
-  });
-  form.reset();
-  refreshLocalState("Reserva enviada para confirmação.");
-}
-
-function localCancelReservation(reservationId) {
-  const record = state.reservations.find(item => item.id === reservationId);
-  if (!record || record.teacherUid !== state.currentUser?.uid || record.status !== "pending") return;
-  record.status = "cancelled";
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localConfirmReservation(reservationId) {
-  const record = state.reservations.find(item => item.id === reservationId);
-  if (!record || record.status !== "pending") return;
-  const book = state.books.find(item => item.id === record.bookId);
-  if (!book || getAvailableCopies(book) < Number(record.quantity)) {
-    return alert("Não há exemplares suficientes para confirmar a reserva.");
-  }
-
-  book.reservedCount = Number(book.reservedCount || 0) + Number(record.quantity);
-  record.status = "active";
-  record.confirmedAt = localTimestamp();
-  record.confirmedByUid = state.currentUser.uid;
-  record.confirmedByName = state.currentUser.name;
-  record.updatedAt = localTimestamp();
-  refreshLocalState("Reserva confirmada e exemplares separados.");
-}
-
-function localRejectReservation(reservationId) {
-  const record = state.reservations.find(item => item.id === reservationId);
-  if (!record || record.status !== "pending") return;
-  record.status = "rejected";
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localFinishReservation(reservationId, finalStatus) {
-  if (!["completed", "cancelled"].includes(finalStatus)) return;
-  const record = state.reservations.find(item => item.id === reservationId);
-  if (!record || record.status !== "active") return;
-  const book = state.books.find(item => item.id === record.bookId);
-  if (book) {
-    book.reservedCount = Math.max(
-      0,
-      Number(book.reservedCount || 0) - Number(record.quantity)
-    );
-  }
-
-  record.status = finalStatus;
-  record.finishedAt = localTimestamp();
-  record.finishedByUid = state.currentUser.uid;
-  record.updatedAt = localTimestamp();
-  refreshLocalState();
-}
-
-function localToggleStudentPermission(uid, grant) {
-  const user = state.users.find(item => item.uid === uid);
-  if (!user || user.baseRole !== "Aluno") return;
-
-  user.operatorEnabled = Boolean(grant);
-  if (state.currentUser?.uid === uid) {
-    state.authClaims = { ...state.authClaims, operator: Boolean(grant) };
-  }
-
-  state.studentPermissionSearch = "";
-  refreshLocalState(
-    grant
-      ? "Acesso de aluno operador concedido."
-      : "Acesso de aluno operador removido."
-  );
-}
-
-function localChangeStaffRole(uid, role) {
-  if (!["Professor", "Bibliotecário", "Administrador"].includes(role)) return;
-  if (uid === state.currentUser?.uid) {
-    return alert("O administrador não pode alterar o próprio perfil nesta tela.");
-  }
-
-  const user = state.users.find(item => item.uid === uid);
-  if (!user || user.baseRole !== "Professor") return;
-  user.role = role;
-  refreshLocalState();
-}
-
-
-function localToggleUserActiveStatus(uid, activate) {
-  const target = state.users.find(user => user.uid === uid);
-  if (!target) return;
-
-  if (uid === state.currentUser?.uid) {
-    alert("Você não pode desativar o próprio perfil.");
-    return;
-  }
-
-  const effectiveRole = getEffectiveRole();
-  const admin = effectiveRole === "Administrador";
-  const librarianCanManage =
-    effectiveRole === "Bibliotecário" && target.baseRole === "Aluno";
-
-  if (!admin && !librarianCanManage) return;
-
-  target.isActive = Boolean(activate);
-  if (!activate && target.baseRole === "Aluno") {
-    target.operatorEnabled = false;
-  }
-
-  state.studentPermissionSearch = "";
-  refreshLocalState(activate ? "Perfil reativado." : "Perfil desativado.");
-}
-
-
 function stopListener(name) {
   if (typeof unsubscribers[name] === "function") {
     unsubscribers[name]();
@@ -3548,9 +1980,7 @@ function stopPrivateListeners() {
 }
 
 function sortBooks() {
-  state.books.sort((a, b) =>
-    displayBookField(a.title).localeCompare(displayBookField(b.title), "pt-BR")
-  );
+  state.books.sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
 }
 
 function sortByCreatedAt(records) {
@@ -3580,129 +2010,21 @@ function startBooksListener() {
   );
 }
 
-function startPublicContentListeners() {
-  stopListener("events");
-  stopListener("tavola");
-
-  unsubscribers.events = onSnapshot(
-    collection(db, "events"),
-    snapshot => {
-      state.events = sortByCreatedAt(
-        snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-      );
-      state.eventsLoaded = true;
-      renderEvents();
-    },
-    error => {
-      console.error("Erro ao carregar eventos:", error);
-      if (elements.eventsContent) {
-        elements.eventsContent.innerHTML =
-          '<div class="empty-state">Não foi possível carregar os eventos.</div>';
-      }
-    }
-  );
-
-  unsubscribers.tavola = onSnapshot(
-    collection(db, "tavola"),
-    snapshot => {
-      state.tavolaRecords = sortByCreatedAt(
-        snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-      );
-      state.tavolaLoaded = true;
-      renderTavola();
-    },
-    error => {
-      console.error("Erro ao carregar a Távola:", error);
-      if (elements.tavolaContent) {
-        elements.tavolaContent.innerHTML =
-          '<div class="empty-state">Não foi possível carregar os registros da Távola.</div>';
-      }
-    }
-  );
-}
-
-
-function buildPendingProfileFromAuth(firebaseUser, preferredRole = null, preferredName = "") {
-  const email = String(firebaseUser?.email || "").trim().toLowerCase();
-  const detectedRole = preferredRole || (
-    email.endsWith(`@${ROLE_DOMAINS.Professor}`) ? "Professor" : "Aluno"
-  );
-
-  return {
-    uid: firebaseUser?.uid || "",
-    name: String(
-      preferredName ||
-      firebaseUser?.displayName ||
-      email.split("@")[0] ||
-      "Usuário"
-    ).trim(),
-    email,
-    baseRole: detectedRole,
-    role: detectedRole,
-    isActive: true,
-    emailVerified: Boolean(firebaseUser?.emailVerified),
-    profilePending: true
-  };
-}
-
-async function ensureUserDocument(
-  firebaseUser,
-  preferredName = "",
-  preferredRole = ""
-) {
+async function ensureUserDocument(firebaseUser) {
   const userRef = doc(db, "users", firebaseUser.uid);
   const snapshot = await getDoc(userRef);
+  if (snapshot.exists()) return;
 
-  const email = String(firebaseUser.email || "").toLowerCase();
-  const emailPrefix = email.split("@")[0];
-  const authName = String(
-    preferredName ||
-    firebaseUser.displayName ||
-    ""
-  ).trim();
-
-  const detectedRole = preferredRole || (
-    email.endsWith(`@${ROLE_DOMAINS.Professor}`)
-      ? "Professor"
-      : "Aluno"
-  );
-
-  if (snapshot.exists()) {
-    const data = snapshot.data();
-    const storedName = String(data.name || "").trim();
-
-    if (
-      authName &&
-      (
-        !storedName ||
-        storedName.toLowerCase() === "usuário" ||
-        storedName.toLowerCase() === "usuario" ||
-        storedName === emailPrefix ||
-        /^\d+$/.test(storedName)
-      ) &&
-      storedName !== authName
-    ) {
-      try {
-        await updateDoc(userRef, {
-          name: authName,
-          updatedAt: serverTimestamp()
-        });
-      } catch (nameRepairError) {
-        // A conta já existe e continua válida. Uma eventual falha ao
-        // corrigir o nome não deve impedir o carregamento do perfil.
-        console.warn("Não foi possível reparar automaticamente o nome:", nameRepairError);
-      }
-    }
-
-    return;
-  }
+  const baseRole = firebaseUser.email?.endsWith(`@${ROLE_DOMAINS.Professor}`)
+    ? "Professor"
+    : "Aluno";
 
   await setDoc(userRef, {
-    name: authName || "",
-    email,
-    baseRole: detectedRole,
-    role: detectedRole,
-    isActive: true,
+    name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Usuário",
+    email: String(firebaseUser.email || "").toLowerCase(),
+    baseRole,
+    role: baseRole,
+    canManageCollection: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
@@ -3719,30 +2041,15 @@ function startUserListener(firebaseUser) {
       state.currentUser = normalizeUserSnapshot(snapshot);
       state.currentUser.emailVerified = Boolean(state.authUser?.emailVerified);
 
-      if (!isActualAdministrator(state.currentUser)) {
-        state.adminViewRole = "";
-        sessionStorage.removeItem("techlibAdminViewRole");
-      } else if (!ADMIN_VIEW_ROLES.includes(state.adminViewRole)) {
-        state.adminViewRole = "Administrador";
-        sessionStorage.setItem("techlibAdminViewRole", "Administrador");
-      }
-
-      if (!state.currentUser.isActive) {
-        setFirebaseStatus("Perfil desativado. Procure a administração ou a biblioteca.", "error");
-      } else if (canOperateLibrary(state.currentUser)) {
-        setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
-      } else if (!state.currentUser.emailVerified) {
-        setFirebaseStatus("Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.", "pending");
+      if (!state.currentUser.emailVerified) {
+        setFirebaseStatus("Conta conectada. Confirme o e-mail institucional para liberar as funções.", "pending");
       }
 
       const signature = [
         state.currentUser.uid,
         state.currentUser.baseRole,
         state.currentUser.role,
-        state.currentUser.isActive,
-        state.currentUser.emailVerified,
-        hasOperatorClaim(),
-        state.adminViewRole
+        state.currentUser.canManageCollection
       ].join("|");
 
       if (signature !== state.lastAccessSignature) {
@@ -3752,34 +2059,11 @@ function startUserListener(firebaseUser) {
 
       updateAccessState();
       renderAll();
-      setView(state.currentView || "home");
     },
     error => {
       console.error("Erro ao carregar perfil:", error);
-      if (canOperateLibrary(state.currentUser)) {
-        setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
-      } else {
-        setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
-      }
+      setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
     }
-  );
-}
-
-
-function handlePrivateListenerError(label, error) {
-  console.error(`Erro ao carregar ${label}:`, error);
-
-  if (error?.code === "permission-denied") {
-    setFirebaseStatus(
-      `Acesso ao Firebase bloqueado ao carregar ${label}. Confira as permissões do perfil e as regras do Firestore.`,
-      "error"
-    );
-    return;
-  }
-
-  setFirebaseStatus(
-    `Erro ao sincronizar ${label}. Tente entrar novamente na conta.`,
-    "error"
   );
 }
 
@@ -3791,17 +2075,11 @@ function startPrivateDataListeners() {
   }
 
   const user = state.currentUser;
-  if (!isActiveUser(user)) {
-    renderAll();
-    return;
-  }
-
   const operate = canOperateLibrary(user);
-  const verified = isVerifiedUser();
 
   const loansSource = operate
     ? collection(db, "loans")
-    : verified && isStudentUser(user)
+    : isStudentUser(user)
       ? query(collection(db, "loans"), where("studentUid", "==", user.uid))
       : null;
 
@@ -3813,18 +2091,18 @@ function startPrivateDataListeners() {
           snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
         );
         state.privateDataLoaded = true;
-        if (operate) setFirebaseStatus(getOperationalStatusMessage(user), "ready");
         renderAll();
       },
       error => {
-        handlePrivateListenerError("empréstimos", error);
+        console.error("Erro ao carregar empréstimos:", error);
+        setFirebaseStatus("Erro ao sincronizar empréstimos. Confira as regras do Firestore.", "error");
       }
     );
   }
 
   const reservationsSource = operate
     ? collection(db, "reservations")
-    : verified && isProfessorUser(user)
+    : isProfessorUser(user)
       ? query(collection(db, "reservations"), where("teacherUid", "==", user.uid))
       : null;
 
@@ -3838,7 +2116,8 @@ function startPrivateDataListeners() {
         renderAll();
       },
       error => {
-        handlePrivateListenerError("reservas", error);
+        console.error("Erro ao carregar reservas:", error);
+        setFirebaseStatus("Erro ao sincronizar reservas. Confira as regras do Firestore.", "error");
       }
     );
   }
@@ -3874,7 +2153,7 @@ function populateGenres() {
 }
 
 function renderCover(book, className) {
-  const safeTitle = escapeHtml(displayBookField(book.title));
+  const safeTitle = escapeHtml(book.title);
   const cover = sanitizeCoverUrl(book.cover);
   return cover
     ? `<div class="${className}"><img src="${escapeHtml(cover)}" alt="Capa de ${safeTitle}"></div>`
@@ -3890,7 +2169,7 @@ function renderHome() {
 
   elements.availableSummary.textContent = availableCopies;
 
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     elements.featuredBooks.innerHTML = `
       <div class="empty-state">Configure o Firebase para carregar o acervo compartilhado.</div>
     `;
@@ -3911,8 +2190,8 @@ function renderHome() {
     <article class="book-mini">
       ${renderCover(book, "cover")}
       <div class="book-mini-content">
-        <h3>${escapeHtml(displayBookField(book.title))}</h3>
-        <p>${escapeHtml(displayBookField(book.author))}</p>
+        <h3>${escapeHtml(book.title)}</h3>
+        <p>${escapeHtml(book.author)}</p>
         <span class="status available">${getAvailableCopies(book)} disponível(is)</span>
       </div>
     </article>
@@ -3941,7 +2220,7 @@ function renderCatalog() {
   elements.catalogCount.textContent =
     `${filteredBooks.length} ${filteredBooks.length === 1 ? "livro encontrado" : "livros encontrados"}`;
 
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     elements.bookList.innerHTML = '<div class="empty-state">O Firebase ainda não foi configurado.</div>';
     return;
   }
@@ -3991,13 +2270,8 @@ function renderCatalog() {
     let buttonLabel = "Solicitar empréstimo";
     let buttonDisabled = false;
 
-    const quantityKnown = Number.isInteger(book.quantity) && book.quantity >= 1;
-
     if (unavailableByCondition) {
       buttonLabel = "Fora de circulação";
-      buttonDisabled = true;
-    } else if (!quantityKnown) {
-      buttonLabel = "Quantidade não informada";
       buttonDisabled = true;
     } else if (!isAvailable) {
       buttonLabel = "Indisponível";
@@ -4018,20 +2292,16 @@ function renderCatalog() {
       <article class="book-row">
         ${renderCover(book, "book-row-cover")}
         <div class="book-row-content">
-          <h3>${escapeHtml(displayBookField(book.title))}</h3>
-          <p>${escapeHtml(displayBookField(book.author))}</p>
+          <h3>${escapeHtml(book.title)}</h3>
+          <p>${escapeHtml(book.author)}</p>
           <div class="book-row-meta">
-            ${escapeHtml(displayBookField(book.genre))} • ${escapeHtml(formatBookQuantity(book))}<br>
-            Estado: ${escapeHtml(displayBookField(book.condition))} • Avaria: ${escapeHtml(displayBookField(book.damage))}
+            ${escapeHtml(book.genre)} • ${book.quantity} exemplar(es)<br>
+            Estado: ${escapeHtml(book.condition)} • Avaria: ${escapeHtml(book.damage)}
           </div>
           ${borrowerDetails}
           <div class="row-actions">
             <span class="status ${isAvailable ? "available" : "unavailable"}">
-              ${isAvailable
-                ? `${availableCopies} disponível(is)`
-                : !quantityKnown
-                  ? "Quantidade não informada"
-                  : "Sem exemplares disponíveis"}
+              ${isAvailable ? `${availableCopies} disponível(is)` : "Sem exemplares disponíveis"}
             </span>
             <button
               class="small-button"
@@ -4173,7 +2443,18 @@ function renderProfessorReservations() {
 
           <label>
             Turma
-            <input name="className" maxlength="80" required placeholder="Ex.: 2º Ano A">
+            <select name="className" required>
+              <option value="" selected disabled>Selecione a turma</option>
+              <option value="1ª Série Integral">1ª Série Integral</option>
+              <option value="2ª Série Integral">2ª Série Integral</option>
+              <option value="3ª Série Integral">3ª Série Integral</option>
+              <option value="1ª Série Potiguar">1ª Série Potiguar</option>
+              <option value="2ª Série Potiguar">2ª Série Potiguar</option>
+              <option value="3ª Série Potiguar">3ª Série Potiguar</option>
+              <option value="1ª Série Noturno">1ª Série Noturno</option>
+              <option value="2ª Série Noturno">2ª Série Noturno</option>
+              <option value="3ª Série Noturno">3ª Série Noturno</option>
+            </select>
           </label>
 
           <label>
@@ -4227,7 +2508,7 @@ function renderProfessorReservations() {
 }
 
 function renderLoans() {
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     elements.loanContent.innerHTML = '<div class="empty-state">Configure o Firebase para utilizar empréstimos e reservas.</div>';
     return;
   }
@@ -4247,375 +2528,8 @@ function renderLoans() {
     : renderProfessorReservations();
 }
 
-function renderEvents() {
-  if (!elements.eventsContent) return;
-
-  if (!firebaseConfigured && !LOCAL_MODE) {
-    elements.eventsContent.innerHTML =
-      '<div class="empty-state">Configure o Firebase para carregar os eventos compartilhados.</div>';
-    return;
-  }
-
-  if (!state.eventsLoaded) {
-    elements.eventsContent.innerHTML =
-      '<div class="empty-state">Carregando os eventos...</div>';
-    return;
-  }
-
-  const editing = state.events.find(item => item.id === state.editingEventId) || null;
-  const form = state.eventFormOpen && canOperateLibrary() ? `
-    <form class="content-editor" id="eventForm" onsubmit="saveEvent(event)">
-      <div class="content-editor-grid">
-        <label class="full-field">
-          Nome do evento
-          <input name="title" maxlength="160" required value="${escapeHtml(editing?.title || "")}">
-        </label>
-        <label>
-          Data
-          <input name="date" type="date" required value="${escapeHtml(editing?.date || "")}">
-        </label>
-        <label>
-          Horário
-          <input name="time" type="time" value="${escapeHtml(editing?.time || "")}">
-        </label>
-        <label class="full-field">
-          Local
-          <input name="location" maxlength="160" value="${escapeHtml(editing?.location || "")}">
-        </label>
-        <label class="full-field">
-          Descrição
-          <textarea name="description" maxlength="1500" required>${escapeHtml(editing?.description || "")}</textarea>
-        </label>
-        <label class="full-field">
-          Link da imagem, opcional
-          <input name="imageUrl" type="url" maxlength="1000" placeholder="https://..." value="${escapeHtml(editing?.imageUrl || "")}">
-        </label>
-      </div>
-      <div class="content-editor-actions">
-        <button class="primary-button" type="submit">
-          ${editing ? "Salvar alterações" : "Adicionar evento"}
-        </button>
-        <button class="secondary-button" type="button" onclick="closeEventForm()">Cancelar</button>
-      </div>
-    </form>
-  ` : "";
-
-  const toolbar = canOperateLibrary() ? `
-    <div class="content-toolbar">
-      <button class="primary-button" onclick="openEventForm()">Adicionar evento</button>
-    </div>
-  ` : "";
-
-  const records = state.events.length
-    ? `<div class="content-list">${state.events.map(item => {
-        const imageUrl = sanitizeCoverUrl(item.imageUrl);
-        return `
-          <article class="content-card">
-            <div class="content-card-head">
-              <div>
-                <h3>${escapeHtml(item.title || "Evento")}</h3>
-                <div class="content-card-meta">
-                  ${formatDateInput(item.date)}
-                  ${item.time ? ` • ${escapeHtml(item.time)}` : ""}
-                  ${item.location ? ` • ${escapeHtml(item.location)}` : ""}
-                </div>
-              </div>
-              ${imageUrl ? `
-                <div class="event-cover">
-                  <img src="${escapeHtml(imageUrl)}" alt="Imagem de ${escapeHtml(item.title || "evento")}">
-                </div>
-              ` : ""}
-            </div>
-            <p class="content-card-description">${escapeHtml(item.description || "")}</p>
-            ${canOperateLibrary() ? `
-              <div class="content-card-actions">
-                <button class="small-button" onclick="openEventForm('${item.id}')">Editar</button>
-                <button class="small-button" onclick="removeEvent('${item.id}')">Excluir</button>
-              </div>
-            ` : ""}
-          </article>
-        `;
-      }).join("")}</div>`
-    : '<div class="empty-state">Nenhum evento cadastrado.</div>';
-
-  elements.eventsContent.innerHTML = `${toolbar}${form}${records}`;
-}
-
-function renderTavola() {
-  if (!elements.tavolaContent) return;
-
-  if (!firebaseConfigured && !LOCAL_MODE) {
-    elements.tavolaContent.innerHTML =
-      '<div class="empty-state">Configure o Firebase para carregar os registros da Távola.</div>';
-    return;
-  }
-
-  if (!state.tavolaLoaded) {
-    elements.tavolaContent.innerHTML =
-      '<div class="empty-state">Carregando a Távola...</div>';
-    return;
-  }
-
-  const editing =
-    state.tavolaRecords.find(item => item.id === state.editingTavolaId) || null;
-
-  const form = state.tavolaFormOpen && canOperateLibrary() ? `
-    <form class="content-editor" id="tavolaForm" onsubmit="saveTavolaRecord(event)">
-      <div class="content-editor-grid">
-        <label class="full-field">
-          Título
-          <input name="title" maxlength="180" required value="${escapeHtml(editing?.title || "")}">
-        </label>
-        <label>
-          Data
-          <input name="date" type="date" required value="${escapeHtml(editing?.date || "")}">
-        </label>
-        <label>
-          Tipo de registro
-          <select name="type" required>
-            ${renderSelectOptions(
-              ["Ata", "Registro", "Comunicado", "Outro"],
-              editing?.type || "Ata"
-            )}
-          </select>
-        </label>
-        <label class="full-field">
-          Descrição ou resumo
-          <textarea name="description" maxlength="2500" required>${escapeHtml(editing?.description || "")}</textarea>
-        </label>
-        <label class="full-field">
-          Link do documento, opcional
-          <input name="documentUrl" type="url" maxlength="1000" placeholder="https://..." value="${escapeHtml(editing?.documentUrl || "")}">
-        </label>
-      </div>
-      <div class="content-editor-actions">
-        <button class="primary-button" type="submit">
-          ${editing ? "Salvar alterações" : "Adicionar registro"}
-        </button>
-        <button class="secondary-button" type="button" onclick="closeTavolaForm()">Cancelar</button>
-      </div>
-    </form>
-  ` : "";
-
-  const toolbar = canOperateLibrary() ? `
-    <div class="content-toolbar">
-      <button class="primary-button" onclick="openTavolaForm()">Adicionar registro</button>
-    </div>
-  ` : "";
-
-  const records = state.tavolaRecords.length
-    ? `<div class="content-list">${state.tavolaRecords.map(item => {
-        const documentUrl = sanitizeExternalUrl(item.documentUrl);
-        return `
-          <article class="content-card">
-            <div class="content-card-head">
-              <div>
-                <h3>${escapeHtml(item.title || "Registro da Távola")}</h3>
-                <div class="content-card-meta">
-                  ${escapeHtml(item.type || "Registro")} • ${formatDateInput(item.date)}
-                </div>
-              </div>
-            </div>
-            <p class="content-card-description">${escapeHtml(item.description || "")}</p>
-            ${documentUrl ? `
-              <a class="content-link" href="${escapeHtml(documentUrl)}" target="_blank" rel="noopener noreferrer">
-                Abrir documento
-              </a>
-            ` : ""}
-            ${canOperateLibrary() ? `
-              <div class="content-card-actions">
-                <button class="small-button" onclick="openTavolaForm('${item.id}')">Editar</button>
-                <button class="small-button" onclick="removeTavolaRecord('${item.id}')">Excluir</button>
-              </div>
-            ` : ""}
-          </article>
-        `;
-      }).join("")}</div>`
-    : '<div class="empty-state">Nenhum registro cadastrado na Távola.</div>';
-
-  elements.tavolaContent.innerHTML = `${toolbar}${form}${records}`;
-}
-
-
-function getAccountDomainForUser(user = state.currentUser) {
-  return user?.baseRole === "Professor"
-    ? ROLE_DOMAINS.Professor
-    : ROLE_DOMAINS.Aluno;
-}
-
-function isValidInstitutionalEmailForUser(email, user = state.currentUser) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
-  const domain = getAccountDomainForUser(user);
-  return Boolean(
-    normalizedEmail &&
-    normalizedEmail.endsWith(`@${domain}`) &&
-    normalizedEmail.split("@").length === 2
-  );
-}
-
-function getPendingAccountEmail() {
-  return sessionStorage.getItem("techlibPendingAccountEmail") || "";
-}
-
-function setPendingAccountEmail(email = "") {
-  if (email) {
-    sessionStorage.setItem("techlibPendingAccountEmail", email);
-  } else {
-    sessionStorage.removeItem("techlibPendingAccountEmail");
-  }
-}
-
-async function syncAuthenticatedEmailToProfile(firebaseUser = auth?.currentUser) {
-  if (
-    LOCAL_MODE ||
-    !firebaseUser ||
-    !db ||
-    !firebaseUser.email ||
-    !firebaseUser.emailVerified
-  ) return false;
-
-  const authEmail = String(firebaseUser.email).trim().toLowerCase();
-  const profileEmail = String(state.currentUser?.email || "").trim().toLowerCase();
-
-  if (!authEmail || authEmail === profileEmail) {
-    if (getPendingAccountEmail() === authEmail) setPendingAccountEmail("");
-    return false;
-  }
-
-  await getIdToken(firebaseUser, true);
-
-  await updateDoc(doc(db, "users", firebaseUser.uid), {
-    email: authEmail,
-    updatedAt: serverTimestamp()
-  });
-
-  setPendingAccountEmail("");
-  return true;
-}
-
-function renderProfileEditCard() {
-  if (!state.profileEditOpen) return "";
-
-  const expectedDomain = getAccountDomainForUser();
-  const currentEmail = state.authUser?.email || state.currentUser?.email || "";
-
-  return `
-    <article class="profile-edit-card">
-      <h3>Editar dados da conta</h3>
-      <p>
-        O nome pode ser alterado imediatamente. Para trocar o e-mail, use outro endereço
-        institucional do mesmo tipo de perfil. A alteração do e-mail só será concluída
-        depois da confirmação enviada ao novo endereço.
-      </p>
-
-      <form onsubmit="saveAccountProfile(event)">
-        <div class="profile-edit-grid">
-          <label>
-            Nome completo
-            <input
-              name="accountName"
-              maxlength="120"
-              required
-              value="${escapeHtml(hasValidUserName(state.currentUser) ? state.currentUser.name : "")}"
-            >
-          </label>
-
-          <label>
-            E-mail institucional
-            <input
-              name="accountEmail"
-              type="email"
-              maxlength="180"
-              required
-              value="${escapeHtml(currentEmail)}"
-              placeholder="usuario@${escapeHtml(expectedDomain)}"
-            >
-          </label>
-        </div>
-
-        <p style="margin-top:10px;">
-          Para esta conta, o novo e-mail deve terminar em <strong>@${escapeHtml(expectedDomain)}</strong>.
-        </p>
-
-        <div class="profile-edit-actions">
-          <button class="primary-button" type="submit">Salvar alterações</button>
-          <button class="secondary-button" type="button" onclick="closeProfileEdit()">Cancelar</button>
-        </div>
-      </form>
-    </article>
-  `;
-}
-
-function renderPendingEmailChange() {
-  const pendingEmail = getPendingAccountEmail();
-  if (!pendingEmail) return "";
-
-  return `
-    <div class="pending-email-card">
-      <strong>Alteração de e-mail aguardando confirmação</strong>
-      <span>
-        Enviamos a confirmação para ${escapeHtml(pendingEmail)}.
-        Depois de confirmar o novo endereço, volte ao TechLib e atualize a validação.
-      </span>
-      <button class="secondary-button" type="button" onclick="confirmNewAccountEmail()">
-        Já confirmei o novo e-mail
-      </button>
-    </div>
-  `;
-}
-
-
-function renderEmailVerificationWait() {
-  return `
-    <article class="verification-wait-card">
-      <div class="verification-wait-icon">@</div>
-      <h3>Aguardando confirmação do e-mail</h3>
-      <p>
-        Sua conta foi criada, mas o acesso às funções do TechLib só será liberado
-        depois que o e-mail institucional for confirmado.
-      </p>
-
-      <span class="verification-wait-email">
-        ${escapeHtml(state.currentUser?.email || state.authUser?.email || "")}
-      </span>
-
-      <div class="verification-wait-actions">
-        <button class="primary-button" type="button" onclick="confirmEmailVerification()">
-          Já confirmei meu e-mail
-        </button>
-
-        <button class="secondary-button" type="button" onclick="resendVerification()">
-          Reenviar confirmação
-        </button>
-
-        <button class="secondary-button" type="button" onclick="simulatePasswordReset()">
-          Alterar ou recuperar senha
-        </button>
-
-        <button class="danger-button" type="button" onclick="logout()">
-          Sair da conta
-        </button>
-      </div>
-
-      ${hasOperatorClaim() ? `
-        <div class="pending-email-card" style="text-align:left;">
-          <strong>Permissão de aluno operador ativa</strong>
-          <span>
-            Sua conta recebeu a permissão de Aluno operador pela administração e as funções de Gestão, Eventos,
-            Távola, empréstimos e reservas são liberadas ao entrar novamente.
-          </span>
-        </div>
-      ` : ""}
-
-      <p class="verification-wait-note">
-        Para alunos e professores comuns, empréstimos e reservas continuam dependendo da confirmação do e-mail. A permissão de Aluno operador é aplicada pela API administrativa.
-      </p>
-    </article>
-  `;
-}
-
 function renderProfile() {
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     elements.profileContent.innerHTML = `
       <div class="empty-state">
         O Firebase ainda não foi configurado. Insira o firebaseConfig no início do código.
@@ -4635,32 +2549,6 @@ function renderProfile() {
     return;
   }
 
-  if (!state.currentUser.isActive) {
-    elements.profileContent.innerHTML = `
-      <article class="account-card">
-        <div class="account-head">
-          <div class="avatar">!</div>
-          <div>
-            <strong>${escapeHtml(getUserVisibleName(state.currentUser))}</strong>
-            <span>${escapeHtml(state.currentUser.email)}</span>
-          </div>
-        </div>
-        <span class="account-tag">Perfil desativado</span>
-      </article>
-      <div class="empty-state" style="margin-top:14px;">
-        Este usuário não pode solicitar empréstimos, fazer reservas ou acessar funções de gestão.
-        Procure a administração ou a biblioteca para solicitar a reativação.
-      </div>
-      <button class="danger-button" style="margin-top:14px;" onclick="logout()">Sair da conta</button>
-    `;
-    return;
-  }
-
-  if (!isVerifiedUser() && !canOperateLibrary()) {
-    elements.profileContent.innerHTML = renderEmailVerificationWait();
-    return;
-  }
-
   const initials = state.currentUser.name
     .split(" ")
     .filter(Boolean)
@@ -4674,72 +2562,19 @@ function renderProfile() {
       <div class="account-head">
         <div class="avatar">${escapeHtml(initials || "U")}</div>
         <div>
-          <strong>${escapeHtml(getUserVisibleName(state.currentUser))}</strong>
+          <strong>${escapeHtml(state.currentUser.name)}</strong>
           <span>${escapeHtml(state.currentUser.email)}</span>
         </div>
       </div>
-      <span class="account-tag">${escapeHtml(hasOperatorClaim() && isStudentUser() ? "Aluno operador" : state.currentUser.role)}</span>
-      ${isActualAdministrator() && state.adminViewRole && state.adminViewRole !== "Administrador"
-        ? `<span class="account-tag" style="margin-left:6px;">Visualizando como ${escapeHtml(state.adminViewRole)}</span>`
-        : ""}
+      <span class="account-tag">${escapeHtml(state.currentUser.role)}</span>
       <span class="account-tag" style="margin-left:6px;">${state.currentUser.emailVerified ? "E-mail confirmado" : "E-mail pendente"}</span>
-      ${canOperateLibrary() && isStudentUser()
-        ? '<span class="account-tag" style="margin-left:6px;">Funções operacionais liberadas</span>'
+      ${state.currentUser.canManageCollection && state.currentUser.role === "Aluno"
+        ? '<span class="account-tag" style="margin-left:6px;">Operador da biblioteca</span>'
         : ""}
     </article>
 
-    ${!hasValidUserName(state.currentUser) ? `
-      <div class="empty-state" style="margin-top:12px; text-align:left;">
-        Seu nome completo ainda não está registrado no TechLib.
-        Atualize esse dado para que ele apareça corretamente na Gestão.
-        <button class="primary-button" style="margin-top:10px;" onclick="openProfileEdit()">
-          Informar meu nome
-        </button>
-      </div>
-    ` : ""}
-
-    ${isActualAdministrator() ? `
-      <div class="admin-view-card">
-        <strong>Visualizar como</strong>
-        <p>
-          Altere temporariamente a experiência exibida sem mudar seu perfil real de Administrador.
-          O modo Professor permite testar a rotina docente mantendo seu acesso administrativo.
-          No modo Aluno, a interface é simulada, mas regras protegidas do Firebase continuam vinculadas à conta real.
-        </p>
-        <select onchange="setAdminViewRole(this.value)">
-          ${ADMIN_VIEW_ROLES.map(role => `
-            <option value="${role}" ${(state.adminViewRole || "Administrador") === role ? "selected" : ""}>
-              ${role}
-            </option>
-          `).join("")}
-        </select>
-      </div>
-    ` : ""}
-
-
-      ${
-        state.currentUser.baseRole === "Professor" &&
-        state.currentUser.role === "Professor"
-          ? `
-            <div class="empty-state" style="margin-top:12px;">
-              Professores são cadastrados com o perfil inicial de Professor.
-              Um administrador poderá liberar posteriormente o perfil de Bibliotecário ou Administrador.
-            </div>
-          `
-          : ""
-      }
-
     <div class="option-list">
       ${!state.currentUser.emailVerified ? `
-        <button class="option-card" onclick="confirmEmailVerification()">
-          <span class="option-icon">✓</span>
-          <span>
-            <strong>Já confirmei meu e-mail</strong>
-            <span>Atualizar a validação e liberar o acesso ao TechLib.</span>
-          </span>
-          <span class="chevron">›</span>
-        </button>
-
         <button class="option-card" onclick="resendVerification()">
           <span class="option-icon">@</span>
           <span>
@@ -4749,16 +2584,6 @@ function renderProfile() {
           <span class="chevron">›</span>
         </button>
       ` : ""}
-
-      <button class="option-card" onclick="openProfileEdit()">
-        <span class="option-icon">✎</span>
-        <span>
-          <strong>Editar dados da conta</strong>
-          <span>Alterar nome ou solicitar troca do e-mail institucional.</span>
-        </span>
-        <span class="chevron">›</span>
-      </button>
-
 
       <button class="option-card" onclick="simulatePasswordReset()">
         <span class="option-icon">⌘</span>
@@ -4771,237 +2596,47 @@ function renderProfile() {
 
       <button class="danger-button" style="margin-top:4px;" onclick="logout()">Sair da conta</button>
     </div>
-
-    ${renderPendingEmailChange()}
-    ${renderProfileEditCard()}
-
-    <article class="updates-card">
-      <h3>Últimas atualizações</h3>
-      <p class="updates-date">Teste de operador por UID: 25/08/2026</p>
-      <ul class="updates-list"><li>Usuário de teste autorizado diretamente pelo UID do Firebase Authentication, sem depender do perfil antigo nem da confirmação de e-mail.</li></ul>
-      <p class="updates-date">11/08/2026</p>
-      <ul class="updates-list">
-        <li>Modo de estabilização: o aluno operador pode ser autorizado diretamente pelo UID do Firebase Authentication, sem depender do carregamento completo do perfil.</li>
-        <li>Aluno operador agora é concedido com segurança pela API do TechLib usando Firebase Authentication Custom Claims.</li>
-        <li>Eventos e Távola usam a mesma permissão operacional do acervo, empréstimos e reservas.</li>
-        <li>Simplificado o fluxo de aluno operador: a Gestão concede a permissão e o TechLib passa a carregá-la automaticamente pelo perfil salvo no Firestore.</li>
-        <li>Ao entrar na conta, o TechLib verifica a autorização de operador separadamente do perfil e libera as funções operacionais automaticamente.</li>
-        <li>Corrigidas as regras de leitura do aluno operador para aceitar perfis antigos com campos opcionais ausentes e liberar explicitamente a listagem de empréstimos e reservas.</li>
-        <li>Corrigido o contraste da matrícula, e-mail e senha na tela de login, inclusive no preenchimento automático do navegador.</li>
-        <li>Administrador e Bibliotecário podem conceder ou remover acesso de Aluno operador pela Gestão; a permissão entra em vigor ao aluno entrar novamente.</li>
-        <li>A página atual agora é preservada após atualizar o navegador, sem retorno automático à página inicial.</li>
-        <li>O Perfil agora informa quando a permissão de aluno operador já foi concedida, mas ainda está aguardando confirmação do e-mail.</li>
-        <li>Corrigido o erro que podia impedir o carregamento da conta ao tentar reparar automaticamente o nome de um aluno.</li>
-        <li>Administrador agora pode corrigir o nome de cadastros antigos diretamente na Gestão, sem excluir a conta do aluno.</li>
-        <li>Corrigido o salvamento do nome completo no cadastro, evitando que a matrícula do e-mail seja gravada como nome por causa da sincronização antecipada.</li>
-        <li>Cadastros antigos sem nome válido agora exibem “Nome ainda não informado” e solicitam ao aluno que complete o nome no Perfil.</li>
-        <li>Corrigida a exibição dos nomes dos alunos sincronizados na Gestão, com recuperação automática do nome quando disponível no Firebase.</li>
-        <li>Corrigida a sincronização entre contas de alunos do Firebase Authentication e os perfis da coleção users no Firestore.</li>
-        <li>Quando há até 10 alunos sincronizados, a Gestão agora exibe todos diretamente para concessão de acesso como operador.</li>
-        <li>A Gestão agora informa quantos alunos estão sincronizados antes da pesquisa por operador.</li>
-        <li>Corrigido o domínio institucional dos alunos para @estudante.rn.gov.br.</li>
-        <li>O cadastro agora entra imediatamente em “Aguardando confirmação do e-mail” depois que a conta é criada.</li>
-        <li>O envio da confirmação de e-mail não depende mais da criação do perfil no Firestore.</li>
-        <li>Recuperação de senha e reenvio de confirmação agora usam diretamente o e-mail autenticado no Firebase.</li>
-        <li>Adicionado relatório do acervo para Administrador, Bibliotecário e Aluno operador, com opção de impressão ou salvar em PDF.</li>
-        <li>Corrigido o domínio institucional dos professores para @educar.rn.gov.br.</li>
-        <li>Contas com e-mail ainda não confirmado agora entram em uma tela exclusiva de aguardando validação.</li>
-        <li>Enquanto o e-mail estiver pendente, Empréstimos, Reservas e Gestão ficam ocultos e bloqueados.</li>
-        <li>Adicionada edição dos dados da conta no Perfil, permitindo alterar o nome e solicitar troca do e-mail institucional.</li>
-        <li>A troca de e-mail exige confirmação do novo endereço e preserva o mesmo usuário, histórico e permissões.</li>
-        <li>Removidos os usuários e atalhos de teste da versão de produção.</li>
-        <li>Administrador agora pode usar “Visualizar como” para conferir as experiências de Administrador, Bibliotecário, Professor e Aluno sem alterar o perfil real.</li>
-        <li>O modo “Visualizar como” agora também restringe os controles administrativos exibidos conforme o perfil selecionado.</li>
-        <li>Adicionada confirmação de e-mail com atualização do acesso sem precisar sair da conta.</li>
-        <li>Incluída importação do acervo por Excel, XLS e CSV com prévia antes da confirmação.</li>
-        <li>Adicionada verificação de livros já existentes e possíveis duplicatas.</li>
-        <li>Campos incompletos da planilha podem ser importados e completados posteriormente.</li>
-        <li>Incluída pesquisa de alunos para concessão de acesso como aluno operador.</li>
-        <li>Adicionado controle para desativar e reativar perfis de usuários.</li>
-      </ul>
-
-      <details class="updates-history">
-        <summary>Atualizações anteriores</summary>
-
-        <div class="update-previous-item">
-          <strong>Gestão de usuários</strong>
-          <ul class="updates-list">
-            <li>Professores passam a aparecer automaticamente na gestão conforme realizam o autocadastro.</li>
-            <li>Administrador pode definir perfis de Professor, Bibliotecário e Administrador.</li>
-            <li>Bibliotecários e administradores podem conceder ou remover acesso de alunos operadores.</li>
-          </ul>
-        </div>
-
-        <div class="update-previous-item">
-          <strong>Empréstimos e reservas</strong>
-          <ul class="updates-list">
-            <li>Solicitações de empréstimo passam por confirmação de um operador autorizado.</li>
-            <li>O prazo de 15 dias começa somente após a confirmação do empréstimo.</li>
-            <li>Professores podem solicitar reservas de livros para turmas.</li>
-            <li>Operadores podem confirmar devoluções, renovações e reservas.</li>
-          </ul>
-        </div>
-
-        <div class="update-previous-item">
-          <strong>Conteúdo e interface</strong>
-          <ul class="updates-list">
-            <li>Eventos e Távola passaram a ter cadastro e edição por usuários autorizados.</li>
-            <li>Consulta pública do acervo permanece disponível sem login.</li>
-            <li>Tema escuro definido como padrão, mantendo opção de tema claro.</li>
-          </ul>
-        </div>
-      </details>
-    </article>
-  `;
-}
-
-function renderBookImportSection() {
-  const rows = state.bookImportRows || [];
-  const importable = rows.filter(row => row.importable);
-  const duplicates = rows.filter(row => ["duplicate", "possible"].includes(row.status));
-  const skipped = rows.filter(row => row.status === "empty");
-
-  const preview = rows.length ? `
-    <div class="book-import-summary">
-      <span class="book-import-chip">${escapeHtml(state.bookImportFileName || "Planilha")}</span>
-      <span class="book-import-chip">${importable.length} para importar</span>
-      <span class="book-import-chip">${duplicates.length} duplicata(s)/possível(is)</span>
-      ${skipped.length ? `<span class="book-import-chip">${skipped.length} linha(s) vazia(s)</span>` : ""}
-    </div>
-
-    <div class="book-import-preview">
-      ${rows.slice(0, 100).map(row => `
-        <div class="book-import-row">
-          <strong>
-            Linha ${row.index} • ${escapeHtml(displayBookField(row.title))}
-          </strong>
-          <span>
-            Autor: ${escapeHtml(displayBookField(row.author))}<br>
-            Gênero ou CDU: ${escapeHtml(displayBookField(row.genre))}<br>
-            ${row.quantity === null ? "Quantidade: Não informada" : `Quantidade: ${row.quantity}`}
-          </span>
-          <span class="book-import-status ${row.importable ? "ready" : "duplicate"}">
-            ${escapeHtml(row.statusLabel)}
-          </span>
-          ${row.duplicateTitle
-            ? `<span>Registro relacionado: ${escapeHtml(row.duplicateTitle)}</span>`
-            : ""}
-        </div>
-      `).join("")}
-      ${rows.length > 100
-        ? `<div class="book-import-row"><span>Prévia limitada às primeiras 100 linhas. O arquivo possui ${rows.length} linhas analisadas.</span></div>`
-        : ""}
-    </div>
-
-    <div class="book-import-actions">
-      <button
-        class="primary-button"
-        type="button"
-        onclick="confirmBookImport()"
-        ${!importable.length || state.bookImportBusy ? "disabled" : ""}
-      >
-        ${state.bookImportBusy ? "Importando..." : `Importar ${importable.length} registro(s)`}
-      </button>
-      <button
-        class="secondary-button"
-        type="button"
-        onclick="cancelBookImport()"
-        ${state.bookImportBusy ? "disabled" : ""}
-      >
-        Cancelar
-      </button>
-    </div>
-  ` : "";
-
-  return `
-    <div class="book-import-box">
-      <h4>Importar acervo por Excel</h4>
-      <p>
-        Aceita .xlsx, .xls e .csv. Na importação nenhum campo é obrigatório.
-        São reconhecidas as colunas Nome do Livro, Autor, Gênero ou CDU e Quant. Disponível.
-        Campos vazios ficam como não informados para edição posterior.
-      </p>
-      <p style="margin-top:6px;">
-        Antes de importar, o TechLib verifica títulos já existentes e possíveis duplicatas.
-        Registros sinalizados não são cadastrados novamente automaticamente.
-      </p>
-      <input
-        class="book-import-file"
-        type="file"
-        accept=".xlsx,.xls,.csv"
-        onchange="prepareBookImport(event)"
-        ${state.bookImportBusy ? "disabled" : ""}
-      >
-      ${state.bookImportMessage
-        ? `<p style="margin-top:9px;">${escapeHtml(state.bookImportMessage)}</p>`
-        : ""}
-      ${preview}
-    </div>
   `;
 }
 
 function renderBookManagementCard() {
   const editingBook = state.books.find(book => book.id === state.editingBookId) || null;
-  const selectedCondition = editingBook?.condition || "Não informado";
-  const selectedDamage = editingBook?.damage || "Não informado";
-  const isEditing = Boolean(editingBook);
+  const selectedCondition = editingBook?.condition || "Bom";
+  const selectedDamage = editingBook?.damage || "Sem avarias";
 
   const form = state.bookFormOpen ? `
     <form class="book-form" id="bookForm" onsubmit="saveBook(event)">
       <div class="book-form-grid">
         <label class="full-field">
-          Título ${isEditing ? "" : "*"}
-          <input
-            name="title"
-            maxlength="160"
-            ${isEditing ? "" : "required"}
-            value="${escapeHtml(editingBook?.title || "")}"
-          >
+          Título
+          <input name="title" maxlength="160" required value="${escapeHtml(editingBook?.title || "")}">
         </label>
 
         <label>
-          Autor ${isEditing ? "" : "*"}
-          <input
-            name="author"
-            maxlength="120"
-            ${isEditing ? "" : "required"}
-            value="${escapeHtml(editingBook?.author || "")}"
-          >
+          Autor
+          <input name="author" maxlength="120" required value="${escapeHtml(editingBook?.author || "")}">
         </label>
 
         <label>
-          Gênero ou CDU ${isEditing ? "" : "*"}
-          <input
-            name="genre"
-            maxlength="80"
-            ${isEditing ? "" : "required"}
-            value="${escapeHtml(editingBook?.genre || "")}"
-          >
+          Gênero
+          <input name="genre" maxlength="80" required value="${escapeHtml(editingBook?.genre || "")}">
         </label>
 
         <label>
-          Quantidade ${isEditing ? "" : "*"}
-          <input
-            name="quantity"
-            type="number"
-            min="1"
-            max="999"
-            ${isEditing ? "" : "required"}
-            value="${Number.isInteger(editingBook?.quantity) ? editingBook.quantity : ""}"
-            placeholder="Não informada"
-          >
+          Quantidade
+          <input name="quantity" type="number" min="1" max="999" required value="${editingBook?.quantity || 1}">
         </label>
 
         <label>
           Estado de conservação
-          <select name="condition">
+          <select name="condition" required>
             ${renderSelectOptions(BOOK_CONDITIONS, selectedCondition)}
           </select>
         </label>
 
         <label class="full-field">
           Situação ou avaria
-          <select name="damage">
+          <select name="damage" required>
             ${renderSelectOptions(BOOK_DAMAGES, selectedDamage)}
           </select>
         </label>
@@ -5013,9 +2648,7 @@ function renderBookManagementCard() {
       </div>
 
       <p class="book-form-note">
-        ${isEditing
-          ? "Registros importados podem ser completados gradualmente. Campos ainda desconhecidos podem permanecer sem informação."
-          : "No cadastro manual, Título, Autor, Gênero ou CDU e Quantidade são obrigatórios."}
+        Caso exemplares do mesmo título tenham estados diferentes, cadastre-os separadamente.
       </p>
 
       <div class="book-form-actions">
@@ -5030,11 +2663,11 @@ function renderBookManagementCard() {
   const catalogItems = state.books.length ? state.books.map(book => `
     <div class="permission-user">
       <div>
-        <strong>${escapeHtml(displayBookField(book.title))}</strong>
+        <strong>${escapeHtml(book.title)}</strong>
         <span class="managed-book-meta">
-          ${escapeHtml(displayBookField(book.author))} • ${escapeHtml(displayBookField(book.genre))}<br>
-          ${escapeHtml(formatBookQuantity(book))} • ${book.loanedCount} emprestado(s) • ${book.reservedCount} reservado(s)<br>
-          Estado: ${escapeHtml(displayBookField(book.condition))} • Avaria: ${escapeHtml(displayBookField(book.damage))}
+          ${escapeHtml(book.author)} • ${escapeHtml(book.genre)}<br>
+          ${book.quantity} exemplar(es) • ${book.loanedCount} emprestado(s) • ${book.reservedCount} reservado(s)<br>
+          Estado: ${escapeHtml(book.condition)} • Avaria: ${escapeHtml(book.damage)}
         </span>
       </div>
       <div class="managed-book-actions">
@@ -5047,12 +2680,8 @@ function renderBookManagementCard() {
   return `
     <article class="management-card">
       <h3>Gerenciamento do acervo</h3>
-      <p>Cadastre, importe, atualize e gere relatórios do acervo.</p>
-      <div class="book-form-actions" style="margin-top:10px;">
-        <button class="primary-button" onclick="openBookForm()">Cadastrar livro</button>
-        <button class="secondary-button" onclick="generateCollectionReport()">Gerar relatório do acervo</button>
-      </div>
-      ${renderBookImportSection()}
+      <p>Cadastre e atualize as informações dos livros. As mudanças aparecem em todos os dispositivos.</p>
+      <button class="primary-button" onclick="openBookForm()">Cadastrar livro</button>
       ${form}
       <div class="permission-list" style="margin-top:14px;">${catalogItems}</div>
     </article>
@@ -5194,257 +2823,56 @@ function renderActiveReservationsCard() {
   `;
 }
 
-function renderStudentPermissionSearchResults() {
-  const container = document.getElementById("studentPermissionSearchResults");
-  const summary = document.getElementById("studentPermissionSearchSummary");
-  if (!container || !summary) return;
-
-  const term = normalize(state.studentPermissionSearch.trim());
-  const students = state.users.filter(user => user.baseRole === "Aluno");
-
-  if (term.length < 3) {
-    summary.textContent = "Digite pelo menos três caracteres.";
-    container.innerHTML = "";
-    return;
-  }
-
-  const matches = students
-    .filter(user => normalize(`${user.name} ${user.email}`).includes(term))
-    .slice(0, 10);
-
-  summary.textContent = matches.length
-    ? `${matches.length} ${matches.length === 1 ? "aluno encontrado" : "alunos encontrados"}`
-    : students.length
-      ? "Nenhum aluno encontrado com esse nome ou e-mail."
-      : "Nenhum perfil de aluno está sincronizado no Firestore.";
-
-  container.innerHTML = matches.map(user => {
-    const active = user.isActive !== false;
-    const operator = user.operatorEnabled === true;
-    return `
-      <div class="permission-user">
-        <div>
-          <strong>${escapeHtml(getUserVisibleName(user))}</strong>
-          <span>${escapeHtml(user.email)}</span>
-          <div class="user-status-row">
-            <span class="user-status-badge ${active ? "active" : "inactive"}">
-              ${active ? "Ativo" : "Desativado"}
-            </span>
-            ${operator
-              ? '<span class="user-status-badge active">Aluno operador</span>'
-              : ""}
-          </div>
-        </div>
-        <div class="permission-actions">
-          ${active && !operator ? `
-            <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', true)">
-              Conceder acesso
-            </button>
-          ` : ""}
-          ${active && operator ? `
-            <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', false)">
-              Remover acesso
-            </button>
-          ` : ""}
-          <button
-            class="small-button ${active ? "danger-outline" : "success-outline"}"
-            onclick="toggleUserActiveStatus('${user.uid}', ${!active})"
-          >
-            ${active ? "Desativar perfil" : "Reativar perfil"}
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
 function renderUserPermissionsCard() {
   if (!canManageUsers()) return "";
 
   const students = state.users.filter(user => user.baseRole === "Aluno");
-  const operators = students
-    .filter(user => user.operatorEnabled === true && user.isActive !== false)
-    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
-
-  const operatorsContent = operators.length
-    ? operators.map(user => `
-        <div class="permission-user">
-          <div>
-            <strong>${escapeHtml(getUserVisibleName(user))}</strong>
-            <span>${escapeHtml(user.email)}</span>
-          </div>
-          <div class="permission-actions">
-            ${getEffectiveRole() === "Administrador" && !hasValidUserName(user) ? `
-              <button
-                class="small-button"
-                onclick="editManagedStudentName('${user.uid}')"
-              >
-                Corrigir nome
-              </button>
-            ` : ""}
-            <button
-              class="small-button"
-              onclick="toggleStudentCollectionPermission('${user.uid}', false)"
-            >
-              Remover acesso
-            </button>
-            <button
-              class="small-button danger-outline"
-              onclick="toggleUserActiveStatus('${user.uid}', false)"
-            >
-              Desativar perfil
-            </button>
-          </div>
-        </div>
-      `).join("")
-    : '<div class="empty-state">Nenhum aluno operador autorizado.</div>';
-
-  const availableStudents = students
-    .filter(user => user.operatorEnabled !== true)
-    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
-
-  const showSyncedStudents = students.length > 0 && students.length <= 10;
-
-  const syncedStudentsContent = showSyncedStudents
-    ? availableStudents.length
-      ? availableStudents.map(user => {
-          const active = user.isActive !== false;
-          return `
-            <div class="permission-user">
-              <div>
-                <strong>${escapeHtml(getUserVisibleName(user))}</strong>
-                <span>${escapeHtml(user.email)}</span>
-                <div class="user-status-row">
-                  <span class="user-status-badge ${active ? "active" : "inactive"}">
-                    ${active ? "Ativo" : "Desativado"}
-                  </span>
-                </div>
-              </div>
-              <div class="permission-actions">
-                ${getEffectiveRole() === "Administrador" && !hasValidUserName(user) ? `
-                  <button
-                    class="small-button"
-                    onclick="editManagedStudentName('${user.uid}')"
-                  >
-                    Corrigir nome
-                  </button>
-                ` : ""}
-                ${active ? `
-                  <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', true)">
-                    Conceder acesso
-                  </button>
-                ` : `
-                  <button class="small-button success-outline" onclick="toggleUserActiveStatus('${user.uid}', true)">
-                    Reativar perfil
-                  </button>
-                `}
-              </div>
-            </div>
-          `;
-        }).join("")
-      : '<div class="empty-state">Todos os alunos sincronizados já são operadores.</div>'
-    : "";
+  if (!students.length) return "";
 
   return `
     <article class="management-card">
-      <h3>Alunos operadores</h3>
-      <p>Pesquise alunos para conceder acesso de operador, remover permissões ou desativar e reativar perfis.</p>
-
-      <div class="permission-search-help" style="margin-top:8px;">
-        ${students.length} ${students.length === 1 ? "aluno sincronizado" : "alunos sincronizados"} no TechLib.
-        ${students.length === 0
-          ? " Se já existem contas no Firebase Authentication, elas ainda precisam ser sincronizadas com o perfil do TechLib."
-          : ""}
-        ${students.some(user => !hasValidUserName(user)) && getEffectiveRole() === "Administrador"
-          ? " Cadastros antigos sem nome válido podem ser corrigidos pelo botão Corrigir nome."
-          : ""}
-      </div>
-
-      <div class="permission-section-title">Operadores atuais</div>
+      <h3>Permissões de alunos</h3>
+      <p>Autorize os dois alunos responsáveis pelo cadastro e pela movimentação da biblioteca.</p>
       <div class="permission-list">
-        ${operatorsContent}
-      </div>
-
-      ${showSyncedStudents ? `
-        <div class="permission-section-title">Alunos sincronizados</div>
-        <div class="permission-list">
-          ${syncedStudentsContent}
-        </div>
-      ` : ""}
-
-      <div class="permission-search">
-        <label for="studentPermissionSearch">Pesquisar aluno</label>
-        <input
-          id="studentPermissionSearch"
-          type="search"
-          autocomplete="off"
-          placeholder="Nome ou e-mail institucional"
-          value="${escapeHtml(state.studentPermissionSearch)}"
-          oninput="updateStudentPermissionSearch(this.value)"
-        >
-        <p class="permission-search-help">
-          ${showSyncedStudents
-            ? "Os alunos sincronizados estão listados acima. Você também pode pesquisar por nome ou e-mail."
-            : "Como há muitos alunos sincronizados, digite pelo menos três caracteres para pesquisar."}
-        </p>
-        <p class="permission-result-summary" id="studentPermissionSearchSummary">
-          Digite pelo menos três caracteres.
-        </p>
-        <div class="permission-list" id="studentPermissionSearchResults"></div>
+        ${students.map(user => `
+          <div class="permission-user">
+            <div>
+              <strong>${escapeHtml(user.name)}</strong>
+              <span>${escapeHtml(user.email)}</span>
+            </div>
+            <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', ${!user.canManageCollection})">
+              ${user.canManageCollection ? "Remover acesso" : "Conceder acesso"}
+            </button>
+          </div>
+        `).join("")}
       </div>
     </article>
   `;
 }
 
 function renderAdminRolesCard() {
-  if (getEffectiveRole() !== "Administrador") return "";
+  if (state.currentUser?.role !== "Administrador") return "";
 
-  const staff = state.users
-    .filter(user => user.baseRole === "Professor")
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-
-  const content = staff.length ? staff.map(user => {
-    const active = user.isActive !== false;
-    const isSelf = user.uid === state.currentUser.uid;
-    return `
-      <div class="permission-user">
-        <div>
-          <strong>${escapeHtml(user.name)}</strong>
-          <span>${escapeHtml(user.email)}</span>
-          <div class="user-status-row">
-            <span class="user-status-badge ${active ? "active" : "inactive"}">
-              ${active ? "Ativo" : "Desativado"}
-            </span>
-          </div>
-        </div>
-        <div class="permission-actions">
-          <select
-            class="permission-select"
-            onchange="changeStaffRole('${user.uid}', this.value)"
-            ${isSelf || !active ? "disabled" : ""}
-          >
-            <option value="Professor" ${user.role === "Professor" ? "selected" : ""}>Professor</option>
-            <option value="Bibliotecário" ${user.role === "Bibliotecário" ? "selected" : ""}>Bibliotecário</option>
-            <option value="Administrador" ${user.role === "Administrador" ? "selected" : ""}>Administrador</option>
-          </select>
-          ${isSelf ? "" : `
-            <button
-              class="small-button ${active ? "danger-outline" : "success-outline"}"
-              onclick="toggleUserActiveStatus('${user.uid}', ${!active})"
-            >
-              ${active ? "Desativar perfil" : "Reativar perfil"}
-            </button>
-          `}
-        </div>
-      </div>
-    `;
-  }).join("") : '<div class="empty-state">Nenhum professor cadastrado.</div>';
-
+  const staff = state.users.filter(user => user.baseRole === "Professor");
   return `
     <article class="management-card">
-      <h3>Professores e perfis administrativos</h3>
-      <p>Todos os professores cadastrados aparecem aqui. Defina o perfil e a situação de acesso.</p>
-      <div class="permission-list">${content}</div>
+      <h3>Perfis administrativos</h3>
+      <p>Altere professores para bibliotecário ou administrador.</p>
+      <div class="permission-list">
+        ${staff.map(user => `
+          <div class="permission-user">
+            <div>
+              <strong>${escapeHtml(user.name)}</strong>
+              <span>${escapeHtml(user.email)}</span>
+            </div>
+            <select class="permission-select" onchange="changeStaffRole('${user.uid}', this.value)" ${user.uid === state.currentUser.uid ? "disabled" : ""}>
+              <option value="Professor" ${user.role === "Professor" ? "selected" : ""}>Professor</option>
+              <option value="Bibliotecário" ${user.role === "Bibliotecário" ? "selected" : ""}>Bibliotecário</option>
+              <option value="Administrador" ${user.role === "Administrador" ? "selected" : ""}>Administrador</option>
+            </select>
+          </div>
+        `).join("")}
+      </div>
     </article>
   `;
 }
@@ -5452,7 +2880,7 @@ function renderAdminRolesCard() {
 function renderManagement() {
   if (!elements.managementContent) return;
 
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     elements.managementContent.innerHTML = '<div class="empty-state">Configure o Firebase para usar a gestão compartilhada.</div>';
     return;
   }
@@ -5473,8 +2901,6 @@ function renderManagement() {
       ${renderAdminRolesCard()}
     </div>
   `;
-
-  renderStudentPermissionSearchResults();
 }
 
 function renderAll() {
@@ -5482,16 +2908,12 @@ function renderAll() {
   renderHome();
   renderCatalog();
   renderLoans();
-  renderEvents();
-  renderTavola();
   renderProfile();
   renderManagement();
 }
 
 function setView(viewName) {
-  const canUseMovements = Boolean(
-    state.currentUser && isActiveUser() && (isStudentUser() || isProfessorUser())
-  );
+  const canUseMovements = Boolean(state.currentUser && (isStudentUser() || isProfessorUser()));
 
   if (viewName === "loans" && !canUseMovements) {
     viewName = state.currentUser ? "profile" : "home";
@@ -5502,19 +2924,11 @@ function setView(viewName) {
   }
 
   state.currentView = viewName;
-  try {
-    sessionStorage.setItem("techlibCurrentView", viewName);
-  } catch (error) {
-    console.warn("Não foi possível salvar a página atual:", error);
-  }
-
   elements.views.forEach(view => view.classList.toggle("active", view.id === `view-${viewName}`));
   elements.navButtons.forEach(button => button.classList.toggle("active", button.dataset.view === viewName));
 
   if (viewName === "catalog") renderCatalog();
   if (viewName === "loans") renderLoans();
-  if (viewName === "events") renderEvents();
-  if (viewName === "tavola") renderTavola();
   if (viewName === "management") renderManagement();
   if (viewName === "profile") renderProfile();
 
@@ -5523,42 +2937,18 @@ function setView(viewName) {
 
 function updateAccessState() {
   const logged = Boolean(state.currentUser);
-  const active = logged && isActiveUser();
-  const operatorAccess = active && canOperateLibrary();
-  const verifiedAccess = active && isVerifiedUser();
-
-  // Aluno operador, Bibliotecário e Administrador recebem as funções
-  // operacionais diretamente pelo campo role do perfil users/{uid}.
-  const movementAccess = operatorAccess || (
-    verifiedAccess && (isStudentUser() || isProfessorUser())
-  );
+  const movementAccess = logged && (isStudentUser() || isProfessorUser());
 
   elements.headerAccessButton.textContent = logged ? "Perfil" : "Entrar";
   elements.loansNavButton.classList.toggle("hidden", !movementAccess);
-  elements.managementNavButton.classList.toggle("hidden", !operatorAccess);
+  elements.managementNavButton.classList.toggle("hidden", !canOperateLibrary());
 
   if (elements.loansNavLabel) {
     elements.loansNavLabel.textContent = isProfessorUser() ? "Reservas" : "Empréstimos";
   }
 
-  if (!movementAccess && state.currentView === "loans") {
-    setView(logged ? "profile" : "home");
-  }
-
-  if (!operatorAccess && state.currentView === "management") {
-    setView(logged ? "profile" : "home");
-  }
-
-  // A confirmação do e-mail continua bloqueando Aluno e Professor comuns.
-  // O perfil Aluno operador é reconhecido diretamente pela função atribuída na Gestão.
-  if (
-    logged &&
-    !isVerifiedUser() &&
-    !operatorAccess &&
-    ["loans", "management"].includes(state.currentView)
-  ) {
-    setView("profile");
-  }
+  if (!movementAccess && state.currentView === "loans") setView(logged ? "profile" : "home");
+  if (!canOperateLibrary() && state.currentView === "management") setView(logged ? "profile" : "home");
 }
 
 function applyTheme(theme) {
@@ -5577,7 +2967,7 @@ function openAuth(mode = "login") {
   elements.authBackdrop.classList.remove("hidden");
   updateAuthSheet();
 
-  if (!firebaseConfigured && !LOCAL_MODE) {
+  if (!firebaseConfigured) {
     setAuthMessage("Configure o Firebase no início do código antes de entrar ou criar contas.", "error");
   }
 }
@@ -5643,365 +3033,19 @@ function buildAuthEmail() {
 
 function mapFirebaseError(error) {
   const messages = {
-    "auth/email-already-in-use": "Este e-mail já possui uma conta. Se você acabou de se cadastrar, use Entrar com a mesma senha.",
-    "auth/invalid-credential": "Conta não encontrada ou senha incorreta. Caso ainda não tenha cadastro, selecione Criar conta.",
+    "auth/email-already-in-use": "Este e-mail já possui uma conta.",
+    "auth/invalid-credential": "E-mail ou senha inválidos.",
     "auth/invalid-email": "E-mail institucional inválido.",
     "auth/weak-password": "A senha deve possuir pelo menos seis caracteres.",
     "auth/too-many-requests": "Muitas tentativas. Tente novamente mais tarde.",
     "auth/network-request-failed": "Falha de conexão com a internet.",
-    "auth/requires-recent-login": "Por segurança, entre novamente na conta e tente alterar o e-mail.",
-    "auth/invalid-new-email": "O novo e-mail informado é inválido.",
-    "permission-denied": "A operação foi bloqueada pelas regras do Firestore. Se sua permissão acabou de ser alterada, saia e entre novamente. Se o bloqueio continuar, confira as regras do Firestore."
+    "permission-denied": "A operação foi bloqueada pelas regras do Firebase."
   };
   return messages[error?.code] || error?.message || "Não foi possível concluir a operação.";
 }
 
 window.openAuth = openAuth;
 window.setView = setView;
-
-window.openProfileEdit = function() {
-  if (!state.currentUser || !isActiveUser()) return;
-  state.profileEditOpen = true;
-  renderProfile();
-  requestAnimationFrame(() => {
-    document.querySelector(".profile-edit-card")?.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-  });
-};
-
-window.closeProfileEdit = function() {
-  state.profileEditOpen = false;
-  renderProfile();
-};
-
-window.saveAccountProfile = async function(event) {
-  event.preventDefault();
-
-  if (LOCAL_MODE) {
-    alert("A edição da conta estará disponível quando o Firebase estiver conectado.");
-    return;
-  }
-
-  if (!ensureFirebaseReady() || !state.currentUser) return;
-
-  const firebaseUser = auth?.currentUser;
-  if (!firebaseUser) {
-    alert("Entre novamente na conta para editar seus dados.");
-    return;
-  }
-
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const newName = String(data.get("accountName") || "").trim();
-  const newEmail = String(data.get("accountEmail") || "").trim().toLowerCase();
-  const currentAuthEmail = String(firebaseUser.email || "").trim().toLowerCase();
-
-  if (!newName) {
-    alert("Informe seu nome completo.");
-    return;
-  }
-
-  if (!isValidInstitutionalEmailForUser(newEmail)) {
-    const domain = getAccountDomainForUser();
-    alert(`Use um e-mail institucional válido terminado em @${domain}.`);
-    return;
-  }
-
-  const submitButton = form.querySelector('button[type="submit"]');
-  if (submitButton) submitButton.disabled = true;
-
-  try {
-    const nameChanged = newName !== state.currentUser.name;
-    const emailChanged = newEmail !== currentAuthEmail;
-
-    if (!nameChanged && !emailChanged) {
-      state.profileEditOpen = false;
-      renderProfile();
-      alert("Nenhuma alteração foi identificada.");
-      return;
-    }
-
-    if (nameChanged) {
-      await updateProfile(firebaseUser, { displayName: newName });
-
-      await updateDoc(doc(db, "users", state.currentUser.uid), {
-        name: newName,
-        updatedAt: serverTimestamp()
-      });
-    }
-
-    if (emailChanged) {
-      await verifyBeforeUpdateEmail(firebaseUser, newEmail);
-      setPendingAccountEmail(newEmail);
-    }
-
-    state.profileEditOpen = false;
-    renderProfile();
-
-    if (emailChanged) {
-      alert(
-        nameChanged
-          ? "Nome atualizado. Também enviamos uma confirmação para o novo e-mail institucional."
-          : "Enviamos uma confirmação para o novo e-mail institucional. A troca só será concluída depois da confirmação."
-      );
-    } else {
-      alert("Nome atualizado com sucesso.");
-    }
-  } catch (error) {
-    console.error("Erro ao editar dados da conta:", error);
-    alert(mapFirebaseError(error));
-  } finally {
-    if (submitButton) submitButton.disabled = false;
-  }
-};
-
-window.confirmNewAccountEmail = async function() {
-  if (LOCAL_MODE || !ensureFirebaseReady()) return;
-
-  const firebaseUser = auth?.currentUser;
-  if (!firebaseUser) {
-    alert("Entre novamente na conta para atualizar o novo e-mail.");
-    return;
-  }
-
-  try {
-    await reload(firebaseUser);
-    await getIdToken(firebaseUser, true);
-    state.authUser = firebaseUser;
-
-    const pendingEmail = getPendingAccountEmail();
-    const currentEmail = String(firebaseUser.email || "").trim().toLowerCase();
-
-    if (pendingEmail && currentEmail !== pendingEmail.toLowerCase()) {
-      alert("O novo e-mail ainda não aparece como confirmado. Confirme o link recebido e tente novamente.");
-      return;
-    }
-
-    await syncAuthenticatedEmailToProfile(firebaseUser);
-
-    if (state.currentUser) {
-      state.currentUser.email = currentEmail;
-      state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-    }
-
-    setPendingAccountEmail("");
-    renderAll();
-    updateAccessState();
-    alert("Novo e-mail confirmado e sincronizado com o TechLib.");
-  } catch (error) {
-    console.error("Erro ao confirmar novo e-mail:", error);
-    alert(mapFirebaseError(error));
-  }
-};
-
-window.setAdminViewRole = function(role) {
-  if (!isActualAdministrator()) return;
-  if (!ADMIN_VIEW_ROLES.includes(role)) return;
-
-  state.adminViewRole = role;
-  sessionStorage.setItem("techlibAdminViewRole", role);
-
-  state.lastAccessSignature = "";
-  stopPrivateListeners();
-  startPrivateDataListeners();
-
-  updateAccessState();
-  renderAll();
-  setView("profile");
-};
-
-window.openEventForm = function(eventId = null) {
-  if (!canOperateLibrary()) return;
-  state.eventFormOpen = true;
-  state.editingEventId = eventId;
-  renderEvents();
-  requestAnimationFrame(() => {
-    document.getElementById("eventForm")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  });
-};
-
-window.closeEventForm = function() {
-  state.eventFormOpen = false;
-  state.editingEventId = null;
-  renderEvents();
-};
-
-window.saveEvent = async function(event) {
-  event.preventDefault();
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localSaveEvent(event);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
-
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const title = String(data.get("title") || "").trim();
-  const date = String(data.get("date") || "").trim();
-  const time = String(data.get("time") || "").trim();
-  const location = String(data.get("location") || "").trim();
-  const description = String(data.get("description") || "").trim();
-  const imageUrl = sanitizeCoverUrl(data.get("imageUrl"));
-
-  if (!title || !date || !description) {
-    return alert("Preencha o nome, a data e a descrição do evento.");
-  }
-
-  try {
-    form.querySelector('button[type="submit"]').disabled = true;
-    const payload = {
-      title,
-      date,
-      time,
-      location,
-      description,
-      imageUrl,
-      updatedByUid: state.currentUser.uid,
-      updatedByName: state.currentUser.name,
-      updatedAt: serverTimestamp()
-    };
-
-    if (state.editingEventId) {
-      await updateDoc(doc(db, "events", state.editingEventId), payload);
-    } else {
-      await addDoc(collection(db, "events"), {
-        ...payload,
-        createdByUid: state.currentUser.uid,
-        createdByName: state.currentUser.name,
-        createdAt: serverTimestamp()
-      });
-    }
-
-    state.eventFormOpen = false;
-    state.editingEventId = null;
-    alert("Evento salvo e sincronizado em todos os dispositivos.");
-  } catch (error) {
-    console.error(error);
-    alert(mapFirebaseError(error));
-  } finally {
-    form.querySelector('button[type="submit"]')?.removeAttribute("disabled");
-  }
-};
-
-window.removeEvent = async function(eventId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRemoveEvent(eventId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
-  const record = state.events.find(item => item.id === eventId);
-  if (!record) return;
-  if (!confirm(`Excluir o evento "${record.title}"?`)) return;
-
-  try {
-    await deleteDoc(doc(db, "events", eventId));
-  } catch (error) {
-    console.error(error);
-    alert(mapFirebaseError(error));
-  }
-};
-
-window.openTavolaForm = function(recordId = null) {
-  if (!canOperateLibrary()) return;
-  state.tavolaFormOpen = true;
-  state.editingTavolaId = recordId;
-  renderTavola();
-  requestAnimationFrame(() => {
-    document.getElementById("tavolaForm")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  });
-};
-
-window.closeTavolaForm = function() {
-  state.tavolaFormOpen = false;
-  state.editingTavolaId = null;
-  renderTavola();
-};
-
-window.saveTavolaRecord = async function(event) {
-  event.preventDefault();
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localSaveTavolaRecord(event);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
-
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const title = String(data.get("title") || "").trim();
-  const date = String(data.get("date") || "").trim();
-  const type = String(data.get("type") || "").trim();
-  const description = String(data.get("description") || "").trim();
-  const documentUrl = sanitizeExternalUrl(data.get("documentUrl"));
-  const validTypes = ["Ata", "Registro", "Comunicado", "Outro"];
-
-  if (!title || !date || !description || !validTypes.includes(type)) {
-    return alert("Preencha corretamente o título, a data, o tipo e a descrição.");
-  }
-
-  try {
-    form.querySelector('button[type="submit"]').disabled = true;
-    const payload = {
-      title,
-      date,
-      type,
-      description,
-      documentUrl,
-      updatedByUid: state.currentUser.uid,
-      updatedByName: state.currentUser.name,
-      updatedAt: serverTimestamp()
-    };
-
-    if (state.editingTavolaId) {
-      await updateDoc(doc(db, "tavola", state.editingTavolaId), payload);
-    } else {
-      await addDoc(collection(db, "tavola"), {
-        ...payload,
-        createdByUid: state.currentUser.uid,
-        createdByName: state.currentUser.name,
-        createdAt: serverTimestamp()
-      });
-    }
-
-    state.tavolaFormOpen = false;
-    state.editingTavolaId = null;
-    alert("Registro da Távola salvo e sincronizado.");
-  } catch (error) {
-    console.error(error);
-    alert(mapFirebaseError(error));
-  } finally {
-    form.querySelector('button[type="submit"]')?.removeAttribute("disabled");
-  }
-};
-
-window.removeTavolaRecord = async function(recordId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRemoveTavolaRecord(recordId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
-  const record = state.tavolaRecords.find(item => item.id === recordId);
-  if (!record) return;
-  if (!confirm(`Excluir o registro "${record.title}"?`)) return;
-
-  try {
-    await deleteDoc(doc(db, "tavola", recordId));
-  } catch (error) {
-    console.error(error);
-    alert(mapFirebaseError(error));
-  }
-};
 
 window.openBookForm = function(bookId = null) {
   if (!canOperateLibrary()) return;
@@ -6019,531 +3063,55 @@ window.closeBookForm = function() {
   renderManagement();
 };
 
-
-window.prepareBookImport = async function(event) {
-  const input = event.currentTarget;
-  const file = input.files?.[0];
-
-  state.bookImportRows = [];
-  state.bookImportFileName = "";
-  state.bookImportMessage = "";
-
-  if (!file) {
-    renderManagement();
-    return;
-  }
-
-  if (!globalThis.XLSX) {
-    state.bookImportMessage = "Não foi possível carregar o leitor de Excel. Verifique a conexão com a internet.";
-    renderManagement();
-    return;
-  }
-
-  const validExtension = /\.(xlsx|xls|csv)$/i.test(file.name);
-  if (!validExtension) {
-    state.bookImportMessage = "Selecione um arquivo .xlsx, .xls ou .csv.";
-    renderManagement();
-    return;
-  }
-
-  try {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const sheetName = workbook.SheetNames[0];
-
-    if (!sheetName) {
-      throw new Error("A planilha não possui abas.");
-    }
-
-    const sheet = workbook.Sheets[sheetName];
-    const rawRows = XLSX.utils.sheet_to_json(sheet, {
-      defval: "",
-      raw: false
-    });
-
-    if (!rawRows.length) {
-      state.bookImportMessage = "Nenhum registro foi encontrado na primeira aba da planilha.";
-      renderManagement();
-      return;
-    }
-
-    const headers = Object.keys(rawRows[0] || {}).map(normalizeSpreadsheetHeader);
-    const aliases = [
-      "nome do livro", "titulo", "livro",
-      "autor", "autores",
-      "genero ou cdu", "genero", "cdu",
-      "quant disponivel", "quantidade disponivel", "quantidade"
-    ];
-
-    const hasKnownHeader = headers.some(header =>
-      aliases.some(alias => header === normalizeSpreadsheetHeader(alias))
-    );
-
-    if (!hasKnownHeader) {
-      state.bookImportMessage =
-        "Não reconheci as colunas da planilha. Use Nome do Livro, Autor, Gênero ou CDU e/ou Quant. Disponível.";
-      renderManagement();
-      return;
-    }
-
-    state.bookImportRows = buildImportRows(rawRows);
-    state.bookImportFileName = file.name;
-    state.bookImportMessage =
-      "Planilha analisada. Confira a prévia antes de confirmar a importação.";
-    renderManagement();
-  } catch (error) {
-    console.error(error);
-    state.bookImportMessage = "Não foi possível ler a planilha. Verifique se o arquivo está íntegro.";
-    renderManagement();
-  }
-};
-
-window.cancelBookImport = function() {
-  if (state.bookImportBusy) return;
-  state.bookImportRows = [];
-  state.bookImportFileName = "";
-  state.bookImportMessage = "";
-  renderManagement();
-};
-
-window.confirmBookImport = async function() {
-  if (!ensureOperatorAccess() || state.bookImportBusy) return;
-
-  const rows = (state.bookImportRows || []).filter(row => row.importable);
-  if (!rows.length) {
-    alert("Não há registros novos para importar.");
-    return;
-  }
-
-  // Confere novamente para evitar duplicatas caso o acervo tenha mudado após a prévia.
-  const accepted = [];
-  const liveComparison = [...state.books];
-
-  rows.forEach(row => {
-    const duplicate = findBookDuplicate(row, liveComparison);
-    if (!duplicate) {
-      accepted.push(row);
-      liveComparison.push({
-        id: `import-${row.index}`,
-        title: row.title,
-        author: row.author,
-        genre: row.genre,
-        quantity: row.quantity
-      });
-    }
-  });
-
-  if (!accepted.length) {
-    alert("Todos os registros agora correspondem a livros já existentes ou possíveis duplicatas.");
-    state.bookImportMessage = "Nenhum registro novo restou para importar. Reabra a planilha para atualizar a prévia.";
-    renderManagement();
-    return;
-  }
-
-  const confirmed = confirm(
-    `Importar ${accepted.length} registro(s) novo(s)? ` +
-    "Campos vazios permanecerão como não informados e as quantidades não serão somadas automaticamente."
-  );
-  if (!confirmed) return;
-
-  state.bookImportBusy = true;
-  state.bookImportMessage = "Importando registros...";
-  renderManagement();
-
-  try {
-    const now = localTimestamp();
-
-    if (LOCAL_MODE) {
-      accepted.forEach(row => {
-        state.books.push({
-          id: localId("book"),
-          title: row.title,
-          author: row.author,
-          genre: row.genre,
-          quantity: row.quantity,
-          loanedCount: 0,
-          reservedCount: 0,
-          condition: "Não informado",
-          damage: "Não informado",
-          cover: "",
-          createdBy: state.currentUser.uid,
-          createdAt: now,
-          updatedAt: now,
-          importedFrom: state.bookImportFileName
-        });
-      });
-
-      state.bookImportBusy = false;
-      state.bookImportRows = [];
-      state.bookImportMessage = `${accepted.length} registro(s) importado(s) no modo local.`;
-      persistLocalData();
-      sortBooks();
-      renderAll();
-      alert(`${accepted.length} registro(s) importado(s).`);
-      return;
-    }
-
-    if (!ensureFirebaseReady()) {
-      state.bookImportBusy = false;
-      renderManagement();
-      return;
-    }
-
-    // Firestore permite até 500 operações por lote; usamos 400 por segurança.
-    for (let start = 0; start < accepted.length; start += 400) {
-      const chunk = accepted.slice(start, start + 400);
-      const batch = writeBatch(db);
-
-      chunk.forEach(row => {
-        const bookRef = doc(collection(db, "books"));
-        batch.set(bookRef, {
-          title: row.title,
-          author: row.author,
-          genre: row.genre,
-          quantity: row.quantity,
-          loanedCount: 0,
-          reservedCount: 0,
-          condition: "Não informado",
-          damage: "Não informado",
-          cover: "",
-          createdBy: state.currentUser.uid,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          importedFrom: state.bookImportFileName
-        });
-      });
-
-      await batch.commit();
-    }
-
-    state.bookImportBusy = false;
-    state.bookImportRows = [];
-    state.bookImportMessage = `${accepted.length} registro(s) importado(s) com sucesso.`;
-    renderManagement();
-    alert(`${accepted.length} registro(s) importado(s) com sucesso.`);
-  } catch (error) {
-    console.error(error);
-    state.bookImportBusy = false;
-    state.bookImportMessage = "A importação foi interrompida. Verifique a conexão e as permissões.";
-    renderManagement();
-    alert(mapFirebaseError(error));
-  }
-};
-
-
-window.generateCollectionReport = function() {
-  if (!ensureOperatorAccess()) {
-    alert("Você não possui permissão para gerar relatórios do acervo.");
-    return;
-  }
-
-  if (!state.books.length) {
-    alert("Não há livros cadastrados para gerar o relatório.");
-    return;
-  }
-
-  const books = [...state.books].sort((a, b) =>
-    displayBookField(a.title).localeCompare(displayBookField(b.title), "pt-BR")
-  );
-
-  const totalRecords = books.length;
-  const booksWithKnownQuantity = books.filter(book =>
-    Number.isInteger(book.quantity) && book.quantity >= 1
-  );
-  const unknownQuantityCount = totalRecords - booksWithKnownQuantity.length;
-  const totalCopies = booksWithKnownQuantity.reduce(
-    (sum, book) => sum + book.quantity,
-    0
-  );
-  const totalLoaned = books.reduce(
-    (sum, book) => sum + Math.max(0, Number(book.loanedCount) || 0),
-    0
-  );
-  const totalReserved = books.reduce(
-    (sum, book) => sum + Math.max(0, Number(book.reservedCount) || 0),
-    0
-  );
-  const totalAvailable = books.reduce(
-    (sum, book) => sum + getAvailableCopies(book),
-    0
-  );
-
-  const generatedAt = new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short"
-  }).format(new Date());
-
-  const generatedBy = displayBookField(state.currentUser?.name);
-  const generatedRole = getEffectiveRole() || state.currentUser?.role || "Usuário autorizado";
-
-  const rows = books.map((book, index) => {
-    const quantityKnown = Number.isInteger(book.quantity) && book.quantity >= 1;
-    const quantity = quantityKnown ? String(book.quantity) : "Não informada";
-    const available = quantityKnown ? String(getAvailableCopies(book)) : "—";
-    const loaned = Math.max(0, Number(book.loanedCount) || 0);
-    const reserved = Math.max(0, Number(book.reservedCount) || 0);
-
-    return `
-      <tr>
-        <td class="num">${index + 1}</td>
-        <td>${escapeHtml(displayBookField(book.title))}</td>
-        <td>${escapeHtml(displayBookField(book.author))}</td>
-        <td>${escapeHtml(displayBookField(book.genre))}</td>
-        <td class="center">${escapeHtml(quantity)}</td>
-        <td class="center">${escapeHtml(available)}</td>
-        <td class="center">${loaned}</td>
-        <td class="center">${reserved}</td>
-        <td>${escapeHtml(displayBookField(book.condition))}</td>
-        <td>${escapeHtml(displayBookField(book.damage))}</td>
-      </tr>
-    `;
-  }).join("");
-
-  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!reportWindow) {
-    alert("O navegador bloqueou a abertura do relatório. Permita pop-ups para o TechLib e tente novamente.");
-    return;
-  }
-
-  const reportHtml = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Relatório do Acervo - TechLib</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 28px;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #111827;
-      background: #ffffff;
-      font-size: 11px;
-    }
-    .report-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      align-items: flex-start;
-      border-bottom: 2px solid #111827;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
-    }
-    h1 { margin: 0 0 4px; font-size: 22px; }
-    h2 { margin: 0; font-size: 13px; font-weight: 600; }
-    .meta { text-align: right; line-height: 1.45; }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(100px, 1fr));
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .summary-card {
-      border: 1px solid #cbd5e1;
-      border-radius: 7px;
-      padding: 9px;
-    }
-    .summary-card span {
-      display: block;
-      color: #475569;
-      font-size: 9px;
-      margin-bottom: 4px;
-    }
-    .summary-card strong { font-size: 15px; }
-    .note {
-      margin: 0 0 12px;
-      color: #475569;
-      font-size: 9px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-    th, td {
-      border: 1px solid #cbd5e1;
-      padding: 5px 6px;
-      vertical-align: top;
-      overflow-wrap: anywhere;
-    }
-    th {
-      background: #eef2f7;
-      font-size: 9px;
-      text-align: left;
-    }
-    td { font-size: 9px; line-height: 1.3; }
-    .num { width: 32px; text-align: center; }
-    .center { text-align: center; }
-    .actions {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-    button {
-      border: 1px solid #334155;
-      border-radius: 7px;
-      padding: 8px 12px;
-      background: #ffffff;
-      color: #111827;
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .primary { background: #111827; color: #ffffff; }
-    .footer {
-      margin-top: 14px;
-      color: #64748b;
-      font-size: 9px;
-    }
-    @page {
-      size: A4 landscape;
-      margin: 10mm;
-    }
-    @media print {
-      body { padding: 0; }
-      .no-print { display: none !important; }
-      thead { display: table-header-group; }
-      tr { break-inside: avoid; }
-    }
-  </style>
-</head>
-<body>
-  <div class="actions no-print">
-    <button class="primary" onclick="window.print()">Imprimir / Salvar em PDF</button>
-    <button onclick="window.close()">Fechar</button>
-  </div>
-
-  <header class="report-header">
-    <div>
-      <h1>TechLib</h1>
-      <h2>Relatório do Acervo</h2>
-    </div>
-    <div class="meta">
-      <strong>Gerado em:</strong> ${escapeHtml(generatedAt)}<br>
-      <strong>Responsável:</strong> ${escapeHtml(generatedBy)}<br>
-      <strong>Perfil:</strong> ${escapeHtml(generatedRole)}
-    </div>
-  </header>
-
-  <section class="summary">
-    <div class="summary-card"><span>Títulos / registros</span><strong>${totalRecords}</strong></div>
-    <div class="summary-card"><span>Exemplares informados</span><strong>${totalCopies}</strong></div>
-    <div class="summary-card"><span>Quantidade não informada</span><strong>${unknownQuantityCount}</strong></div>
-    <div class="summary-card"><span>Disponíveis</span><strong>${totalAvailable}</strong></div>
-    <div class="summary-card"><span>Emprestados</span><strong>${totalLoaned}</strong></div>
-    <div class="summary-card"><span>Reservados</span><strong>${totalReserved}</strong></div>
-  </section>
-
-  <p class="note">
-    Os totais de exemplares e de disponibilidade consideram apenas registros com quantidade cadastrada.
-  </p>
-
-  <table>
-    <thead>
-      <tr>
-        <th style="width:3%;">Nº</th>
-        <th style="width:18%;">Título</th>
-        <th style="width:13%;">Autor</th>
-        <th style="width:10%;">Gênero ou CDU</th>
-        <th style="width:7%;">Quantidade</th>
-        <th style="width:7%;">Disponíveis</th>
-        <th style="width:7%;">Emprestados</th>
-        <th style="width:7%;">Reservados</th>
-        <th style="width:10%;">Estado</th>
-        <th style="width:18%;">Situação / avaria</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-
-  <div class="footer">
-    Relatório gerado pelo TechLib. Registros com quantidade não informada permanecem no acervo, mas não entram no total de exemplares disponíveis.
-  </div>
-</body>
-</html>`;
-
-  reportWindow.document.open();
-  reportWindow.document.write(reportHtml);
-  reportWindow.document.close();
-};
-
 window.saveBook = async function(event) {
   event.preventDefault();
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localSaveBook(event);
-    return;
-  }
-
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
 
   const form = event.currentTarget;
   const data = new FormData(form);
   const title = String(data.get("title") || "").trim();
   const author = String(data.get("author") || "").trim();
   const genre = String(data.get("genre") || "").trim();
-  const rawQuantity = String(data.get("quantity") ?? "").trim();
-  const quantity = rawQuantity ? Number(rawQuantity) : null;
-  const condition = String(data.get("condition") || "Não informado");
-  const damage = String(data.get("damage") || "Não informado");
+  const quantity = Number(data.get("quantity"));
+  const condition = String(data.get("condition") || "");
+  const damage = String(data.get("damage") || "");
   const cover = sanitizeCoverUrl(data.get("cover"));
-  const editing = Boolean(state.editingBookId);
 
-  if (!editing && (!title || !author || !genre || !rawQuantity)) {
-    return alert("No cadastro manual, preencha Título, Autor, Gênero ou CDU e Quantidade.");
-  }
-
-  if (rawQuantity && (!Number.isInteger(quantity) || quantity < 1 || quantity > 999)) {
+  if (!title || !author || !genre) return alert("Preencha título, autor e gênero.");
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
     return alert("Informe uma quantidade válida entre 1 e 999.");
   }
-
   if (!BOOK_CONDITIONS.includes(condition) || !BOOK_DAMAGES.includes(damage)) {
-    return alert("Selecione um estado e uma situação válidos.");
-  }
-
-  const duplicate = findBookDuplicate(
-    { title, author, genre },
-    state.books,
-    state.editingBookId
-  );
-  if (duplicate) {
-    return alert(
-      duplicate.type === "exact"
-        ? `Já existe exemplar cadastrado para "${displayBookField(duplicate.book.title)}" com este autor. Edite o registro existente.`
-        : `Já existe um possível exemplar deste título no acervo. Confira o registro "${displayBookField(duplicate.book.title)}" antes de salvar.`
-    );
+    return alert("Selecione um estado e uma avaria válidos.");
   }
 
   try {
-    if (editing) {
-      const currentBook = state.books.find(book => book.id === state.editingBookId);
-      if (!currentBook) return;
+    form.querySelector('button[type="submit"]').disabled = true;
 
-      const occupied =
-        Number(currentBook.loanedCount || 0) +
-        Number(currentBook.reservedCount || 0);
-
-      if (quantity === null && occupied > 0) {
-        return alert("A quantidade não pode ficar sem informação enquanto houver empréstimo ou reserva.");
-      }
-      if (quantity !== null && quantity < occupied) {
-        return alert(`A quantidade não pode ser menor que os ${occupied} exemplar(es) ocupados.`);
-      }
-      if (condition === "Inutilizável" && occupied > 0) {
-        return alert("Não é possível marcar como inutilizável enquanto houver empréstimo ou reserva.");
-      }
-
-      await updateDoc(doc(db, "books", state.editingBookId), {
-        title,
-        author,
-        genre,
-        quantity,
-        condition,
-        damage,
-        cover,
-        updatedBy: state.currentUser.uid,
-        updatedAt: serverTimestamp()
+    if (state.editingBookId) {
+      const bookRef = doc(db, "books", state.editingBookId);
+      await runTransaction(db, async transaction => {
+        const snapshot = await transaction.get(bookRef);
+        if (!snapshot.exists()) throw new Error("Livro não encontrado.");
+        const current = snapshot.data();
+        const occupied = (Number(current.loanedCount) || 0) + (Number(current.reservedCount) || 0);
+        if (quantity < occupied) {
+          throw new Error(`A quantidade não pode ser menor que os ${occupied} exemplar(es) ocupados.`);
+        }
+        if (condition === "Inutilizável" && occupied > 0) {
+          throw new Error("Não é possível marcar como inutilizável enquanto houver empréstimo ou reserva.");
+        }
+        transaction.update(bookRef, {
+          title,
+          author,
+          genre,
+          quantity,
+          condition,
+          damage,
+          cover,
+          updatedBy: state.currentUser.uid,
+          updatedAt: serverTimestamp()
+        });
       });
     } else {
       await addDoc(collection(db, "books"), {
@@ -6564,20 +3132,17 @@ window.saveBook = async function(event) {
 
     state.bookFormOpen = false;
     state.editingBookId = null;
-    renderManagement();
+    alert("Livro salvo e sincronizado com sucesso.");
   } catch (error) {
     console.error(error);
     alert(mapFirebaseError(error));
+  } finally {
+    form.querySelector('button[type="submit"]')?.removeAttribute("disabled");
   }
 };
 
 window.removeBook = async function(bookId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRemoveBook(bookId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
   const book = state.books.find(item => item.id === bookId);
   if (!book) return;
 
@@ -6607,11 +3172,6 @@ window.removeBook = async function(bookId) {
 };
 
 window.requestLoan = async function(bookId) {
-  if (LOCAL_MODE) {
-    if (!ensureVerified()) return;
-    localRequestLoan(bookId);
-    return;
-  }
   if (!state.currentUser) {
     openAuth("login");
     return;
@@ -6676,10 +3236,6 @@ window.requestLoan = async function(bookId) {
 };
 
 window.cancelLoanRequest = async function(loanId) {
-  if (LOCAL_MODE) {
-    localCancelLoanRequest(loanId);
-    return;
-  }
   if (!ensureFirebaseReady() || !state.currentUser) return;
 
   try {
@@ -6706,12 +3262,7 @@ window.cancelLoanRequest = async function(loanId) {
 };
 
 window.confirmLoan = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localConfirmLoan(loanId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6763,12 +3314,7 @@ window.confirmLoan = async function(loanId) {
 };
 
 window.rejectLoan = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRejectLoan(loanId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6787,11 +3333,6 @@ window.rejectLoan = async function(loanId) {
 };
 
 window.requestRenewal = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureVerified()) return;
-    localRequestRenewal(loanId);
-    return;
-  }
   if (!ensureFirebaseReady() || !ensureVerified() || !state.currentUser) return;
   try {
     const record = state.loans.find(item => item.id === loanId);
@@ -6808,12 +3349,7 @@ window.requestRenewal = async function(loanId) {
 };
 
 window.confirmRenewal = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localConfirmRenewal(loanId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
   try {
     const loanRef = doc(db, "loans", loanId);
     await runTransaction(db, async transaction => {
@@ -6841,12 +3377,7 @@ window.confirmRenewal = async function(loanId) {
 };
 
 window.rejectRenewal = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRejectRenewal(loanId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
   try {
     await updateDoc(doc(db, "loans", loanId), {
       renewalRequested: false,
@@ -6859,12 +3390,7 @@ window.rejectRenewal = async function(loanId) {
 };
 
 window.returnLoan = async function(loanId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localReturnLoan(loanId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
 
   try {
     const loanRef = doc(db, "loans", loanId);
@@ -6901,11 +3427,6 @@ window.returnLoan = async function(loanId) {
 
 window.saveReservation = async function(event) {
   event.preventDefault();
-  if (LOCAL_MODE) {
-    if (!ensureVerified() || !state.currentUser || !isProfessorUser()) return;
-    localSaveReservation(event);
-    return;
-  }
   if (!ensureFirebaseReady() || !ensureVerified() || !state.currentUser || !isProfessorUser()) return;
 
   const form = event.currentTarget;
@@ -6945,10 +3466,6 @@ window.saveReservation = async function(event) {
 };
 
 window.cancelReservation = async function(reservationId) {
-  if (LOCAL_MODE) {
-    localCancelReservation(reservationId);
-    return;
-  }
   if (!ensureFirebaseReady() || !state.currentUser) return;
   const record = state.reservations.find(item => item.id === reservationId);
   if (!record || record.teacherUid !== state.currentUser.uid || record.status !== "pending") return;
@@ -6965,12 +3482,7 @@ window.cancelReservation = async function(reservationId) {
 };
 
 window.confirmReservation = async function(reservationId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localConfirmReservation(reservationId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
 
   try {
     const reservationRef = doc(db, "reservations", reservationId);
@@ -7009,12 +3521,7 @@ window.confirmReservation = async function(reservationId) {
 };
 
 window.rejectReservation = async function(reservationId) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localRejectReservation(reservationId);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
   try {
     const record = state.reservations.find(item => item.id === reservationId);
     if (!record || record.status !== "pending") return;
@@ -7029,12 +3536,7 @@ window.rejectReservation = async function(reservationId) {
 };
 
 window.finishReservation = async function(reservationId, finalStatus) {
-  if (LOCAL_MODE) {
-    if (!ensureOperatorAccess()) return;
-    localFinishReservation(reservationId, finalStatus);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureOperatorAccess()) return;
+  if (!ensureFirebaseReady() || !ensureVerified() || !canOperateLibrary()) return;
   if (!["completed", "cancelled"].includes(finalStatus)) return;
 
   try {
@@ -7067,321 +3569,59 @@ window.finishReservation = async function(reservationId, finalStatus) {
   }
 };
 
-window.updateStudentPermissionSearch = function(value) {
-  state.studentPermissionSearch = String(value || "");
-  renderStudentPermissionSearchResults();
-};
-
-window.editManagedStudentName = async function(uid) {
-  if (!ensureVerified() || getEffectiveRole() !== "Administrador") return;
-
-  const target = state.users.find(user => user.uid === uid);
-  if (!target || target.baseRole !== "Aluno") return;
-
-  const currentName = hasValidUserName(target) ? target.name : "";
-  const informedName = prompt(
-    `Informe o nome completo do aluno\n${target.email}`,
-    currentName
-  );
-
-  if (informedName === null) return;
-
-  const newName = String(informedName || "").trim();
-  if (newName.length < 3 || !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(newName)) {
-    alert("Informe um nome válido.");
-    return;
-  }
-
-  if (LOCAL_MODE) {
-    target.name = newName;
-    target.updatedAt = localTimestamp();
-    refreshLocalState("Nome do aluno atualizado.");
-    return;
-  }
-
-  if (!ensureFirebaseReady()) return;
-
+window.toggleStudentCollectionPermission = async function(uid, grant) {
+  if (!ensureFirebaseReady() || !ensureVerified() || !canManageUsers()) return;
   try {
     await updateDoc(doc(db, "users", uid), {
-      name: newName,
+      canManageCollection: Boolean(grant),
       updatedAt: serverTimestamp()
     });
-    alert("Nome do aluno atualizado.");
-  } catch (error) {
-    console.error("Erro ao corrigir nome do aluno:", error);
-    alert(mapFirebaseError(error));
-  }
-};
-
-window.toggleUserActiveStatus = async function(uid, activate) {
-  if (!ensureVerified() || !canManageUsers()) return;
-  if (uid === state.currentUser?.uid) {
-    alert("Você não pode desativar o próprio perfil.");
-    return;
-  }
-
-  const target = state.users.find(user => user.uid === uid);
-  if (!target) return;
-
-  const effectiveRole = getEffectiveRole();
-  const admin = effectiveRole === "Administrador";
-  const librarianCanManage =
-    effectiveRole === "Bibliotecário" && target.baseRole === "Aluno";
-
-  if (!admin && !librarianCanManage) {
-    alert("Você não possui permissão para alterar a situação deste usuário.");
-    return;
-  }
-
-  if (LOCAL_MODE) {
-    localToggleUserActiveStatus(uid, activate);
-    return;
-  }
-
-  if (!ensureFirebaseReady()) return;
-
-  try {
-    const payload = {
-      isActive: Boolean(activate),
-      updatedAt: serverTimestamp()
-    };
-
-    if (!activate && target.baseRole === "Aluno" && target.operatorEnabled === true) {
-      await callOperatorAccessApi(uid, false);
-      target.operatorEnabled = false;
-    }
-
-    await updateDoc(doc(db, "users", uid), payload);
-    state.studentPermissionSearch = "";
-
-    alert(
-      activate
-        ? "Perfil reativado."
-        : "Perfil desativado. Se havia permissão de Aluno operador, ela também foi removida."
-    );
   } catch (error) {
     console.error(error);
     alert(mapFirebaseError(error));
-  }
-};
-
-window.toggleStudentCollectionPermission = async function(uid, grant) {
-  if (!canManageUsers()) return;
-
-  const target = state.users.find(user => user.uid === uid);
-  if (!target || target.baseRole !== "Aluno") {
-    alert("O usuário selecionado não é um aluno.");
-    return;
-  }
-
-  if (target.isActive === false && grant) {
-    alert("Reative o perfil antes de conceder acesso de aluno operador.");
-    return;
-  }
-
-  if (LOCAL_MODE) {
-    localToggleStudentPermission(uid, grant);
-    return;
-  }
-
-  if (!ensureFirebaseReady()) return;
-
-  try {
-    await callOperatorAccessApi(uid, grant);
-
-    target.operatorEnabled = Boolean(grant);
-    state.studentPermissionSearch = "";
-    renderManagement();
-
-    alert(
-      grant
-        ? "Acesso de aluno operador concedido. O aluno deve sair e entrar novamente na conta para receber a nova permissão."
-        : "Acesso de aluno operador removido. Se o aluno estiver conectado, peça para sair e entrar novamente. A API também revogou os tokens de atualização da conta."
-    );
-  } catch (error) {
-    console.error("Erro ao alterar acesso de aluno operador pela API:", error);
-    alert(error?.message || "Não foi possível alterar o acesso de aluno operador.");
   }
 };
 
 window.changeStaffRole = async function(uid, role) {
-  if (LOCAL_MODE) {
-    if (!ensureVerified() || getEffectiveRole() !== "Administrador") return;
-    localChangeStaffRole(uid, role);
-    return;
-  }
-  if (!ensureFirebaseReady() || !ensureVerified() || getEffectiveRole() !== "Administrador") return;
+  if (!ensureFirebaseReady() || !ensureVerified() || state.currentUser?.role !== "Administrador") return;
   if (!["Professor", "Bibliotecário", "Administrador"].includes(role)) return;
   if (uid === state.currentUser.uid) return alert("O administrador não pode alterar o próprio perfil nesta tela.");
-  const target = state.users.find(user => user.uid === uid);
-  if (target?.isActive === false) return alert("Reative o perfil antes de alterar sua função.");
 
   try {
     await updateDoc(doc(db, "users", uid), {
       role,
+      canManageCollection: role === "Bibliotecário" || role === "Administrador",
       updatedAt: serverTimestamp()
     });
   } catch (error) {
     console.error(error);
-    alert(mapFirebaseError(error));
-  }
-};
-
-window.confirmEmailVerification = async function() {
-  if (LOCAL_MODE) {
-    alert("No modo local, os usuários de teste já são considerados verificados.");
-    return;
-  }
-
-  if (!ensureFirebaseReady()) return;
-
-  const firebaseUser = auth?.currentUser || state.authUser;
-  if (!firebaseUser) {
-    alert("Entre novamente na conta para verificar o e-mail.");
-    return;
-  }
-
-  try {
-    setFirebaseStatus("Verificando confirmação do e-mail...", "pending");
-
-    await reload(firebaseUser);
-
-    // Atualiza também o token usado pelas regras do Firestore.
-    await getIdToken(firebaseUser, true);
-
-    state.authUser = firebaseUser;
-
-    if (state.currentUser) {
-      state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-    }
-
-    if (!firebaseUser.emailVerified) {
-      setFirebaseStatus(
-        "O e-mail ainda não aparece como confirmado. Abra o link recebido e tente novamente.",
-        "pending"
-      );
-      updateAccessState();
-      renderProfile();
-      alert("O e-mail ainda não foi confirmado. Abra o link recebido no e-mail institucional e tente novamente.");
-      return;
-    }
-
-    // Se a conta existia apenas no Authentication por causa de uma falha
-    // anterior, cria agora o perfil no Firestore antes de liberar o acesso.
-    await ensureUserDocument(firebaseUser);
-    startUserListener(firebaseUser);
-
-    await syncAuthenticatedEmailToProfile(firebaseUser);
-
-    if (state.currentUser && firebaseUser.email) {
-      state.currentUser.email = String(firebaseUser.email).toLowerCase();
-    }
-
-    // Recarrega os listeners que dependem do nível de acesso e da verificação.
-    state.lastAccessSignature = "";
-    startPrivateDataListeners();
-
-    setFirebaseStatus("E-mail confirmado. Acesso ao TechLib liberado.", "ready");
-    updateAccessState();
-    renderAll();
-    setView("profile");
-
-    alert("E-mail confirmado. Seu acesso ao TechLib foi liberado.");
-  } catch (error) {
-    console.error("Erro ao atualizar confirmação do e-mail:", error);
-    setFirebaseStatus("Não foi possível atualizar a confirmação do e-mail.", "error");
     alert(mapFirebaseError(error));
   }
 };
 
 window.resendVerification = async function() {
-  if (!ensureFirebaseReady()) return;
-
-  const firebaseUser = auth?.currentUser || state.authUser;
-  if (!firebaseUser) {
-    alert("Entre novamente na conta para reenviar a confirmação.");
-    return;
-  }
-
+  if (!ensureFirebaseReady() || !state.authUser) return;
   try {
-    await reload(firebaseUser);
-
-    // Garante que contas já criadas no Authentication também possuam
-    // o perfil correspondente na coleção users do Firestore.
-    try {
-      await ensureUserDocument(firebaseUser);
-    } catch (profileSyncError) {
-      console.warn("Perfil ainda não sincronizado no Firestore:", profileSyncError);
-    }
-
-    if (firebaseUser.emailVerified) {
-      state.authUser = firebaseUser;
-      if (state.currentUser) state.currentUser.emailVerified = true;
-      updateAccessState();
-      renderAll();
-      setView("profile");
-      alert("Este e-mail já está confirmado.");
-      return;
-    }
-
-    await sendEmailVerification(firebaseUser);
-    state.authUser = firebaseUser;
-
-    alert(
-      `Novo link de confirmação enviado para ${firebaseUser.email}. ` +
-      "Confira também a pasta Spam ou Lixo eletrônico."
-    );
+    await sendEmailVerification(state.authUser);
+    alert("Novo link de confirmação enviado para o e-mail institucional.");
   } catch (error) {
-    console.error("Erro ao reenviar confirmação:", error);
+    console.error(error);
     alert(mapFirebaseError(error));
   }
 };
 
 window.simulatePasswordReset = async function() {
-  if (!ensureFirebaseReady()) return;
-
-  const email = String(
-    auth?.currentUser?.email ||
-    state.authUser?.email ||
-    state.currentUser?.email ||
-    ""
-  ).trim().toLowerCase();
-
-  if (!email) {
-    alert("Não foi possível identificar o e-mail desta conta.");
-    return;
-  }
-
+  if (!ensureFirebaseReady() || !state.currentUser?.email) return;
   try {
-    await sendPasswordResetEmail(auth, email);
-    alert(
-      `Link para alterar ou recuperar a senha enviado para ${email}. ` +
-      "Confira também a pasta Spam ou Lixo eletrônico."
-    );
+    await sendPasswordResetEmail(auth, state.currentUser.email);
+    alert("Link de redefinição enviado para o e-mail institucional.");
   } catch (error) {
-    console.error("Erro ao enviar recuperação de senha:", error);
+    console.error(error);
     alert(mapFirebaseError(error));
   }
 };
 
 window.logout = async function() {
-  state.adminViewRole = "";
-  sessionStorage.removeItem("techlibAdminViewRole");
-
-  if (LOCAL_MODE) {
-    state.currentUser = null;
-    state.authUser = null;
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.session);
-    updateAccessState();
-    renderAll();
-    setView("home");
-    setFirebaseStatus(
-      "Firebase ainda não configurado.",
-      "ready"
-    );
-    return;
-  }
-
   if (!auth) return;
   await signOut(auth);
   setView("home");
@@ -7421,7 +3661,6 @@ elements.roleButtons.forEach(button => {
   button.addEventListener("click", () => selectRole(button.dataset.role));
 });
 
-
 elements.changeRoleButton.addEventListener("click", () => {
   state.selectedRole = null;
   elements.authForm.reset();
@@ -7441,10 +3680,6 @@ elements.authBackdrop.addEventListener("click", event => {
 });
 
 elements.forgotPasswordButton.addEventListener("click", async () => {
-  if (LOCAL_MODE) {
-    setAuthMessage("Recuperação de senha disponível após conectar o Firebase.", "error");
-    return;
-  }
   if (!ensureFirebaseReady()) return;
   const email = buildAuthEmail();
   if (!email) return setAuthMessage("Informe o e-mail institucional.", "error");
@@ -7459,15 +3694,6 @@ elements.forgotPasswordButton.addEventListener("click", async () => {
 
 elements.authForm.addEventListener("submit", async event => {
   event.preventDefault();
-
-  if (LOCAL_MODE) {
-    setAuthMessage(
-      "Firebase ainda não configurado. Conecte o projeto antes de autenticar usuários.",
-      "error"
-    );
-    return;
-  }
-
   if (!ensureFirebaseReady()) return;
   if (!state.selectedRole) return setAuthMessage("Selecione primeiro o perfil.", "error");
 
@@ -7476,136 +3702,42 @@ elements.authForm.addEventListener("submit", async event => {
   if (!email) return setAuthMessage("Informe somente a parte do e-mail antes do @.", "error");
   if (password.length < 6) return setAuthMessage("A senha deve possuir pelo menos seis caracteres.", "error");
 
-  const wasRegister = state.authMode === "register";
-
-  if (!wasRegister) {
-    try {
-      elements.authSubmitButton.disabled = true;
-      setAuthMessage("Entrando...", "");
-      await signInWithEmailAndPassword(auth, email, password);
-      closeAuth();
-      setView("home");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage(mapFirebaseError(error), "error");
-    } finally {
-      elements.authSubmitButton.disabled = false;
-    }
-    return;
-  }
-
-  const name = elements.nameInput.value.trim();
-  const confirmation = elements.confirmPasswordInput.value;
-
-  if (!name) return setAuthMessage("Informe seu nome completo.", "error");
-  if (password !== confirmation) return setAuthMessage("As senhas não coincidem.", "error");
-
-  let credential = null;
-  const registrationRole = state.selectedRole;
-
   try {
     elements.authSubmitButton.disabled = true;
-    setAuthMessage("Criando conta...", "");
+    setAuthMessage("Processando...", "");
 
-    // Evita que onAuthStateChanged crie o documento users antes de o nome
-    // completo estar sincronizado no Firebase Authentication.
-    state.registrationInProgress = true;
-    state.pendingRegistrationName = name;
-    state.pendingRegistrationRole = registrationRole;
+    if (state.authMode === "register") {
+      const name = elements.nameInput.value.trim();
+      const confirmation = elements.confirmPasswordInput.value;
+      if (!name) throw new Error("Informe seu nome completo.");
+      if (password !== confirmation) throw new Error("As senhas não coincidem.");
 
-    // Primeira etapa: cria a conta no Firebase Authentication.
-    credential = await createUserWithEmailAndPassword(auth, email, password);
-
-    // A partir daqui a conta JÁ EXISTE. Não deixamos mais o usuário preso
-    // no formulário caso alguma etapa secundária apresente erro.
-    state.authUser = credential.user;
-    state.currentUser = buildPendingProfileFromAuth(
-      credential.user,
-      registrationRole,
-      name
-    );
-
-    try {
-      await updateProfile(credential.user, { displayName: name });
-      state.currentUser.name = name;
-    } catch (profileNameError) {
-      console.warn("Não foi possível sincronizar o nome no Auth:", profileNameError);
-    }
-
-    // Envia a confirmação antes de depender do Firestore.
-    let verificationSent = false;
-    try {
-      await sendEmailVerification(credential.user);
-      verificationSent = true;
-    } catch (verificationError) {
-      console.error("Não foi possível enviar a confirmação:", verificationError);
-    }
-
-    // Tenta preparar o perfil no Firestore, mas um erro aqui não desfaz
-    // nem esconde a conta que já foi criada no Authentication.
-    try {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, "users", credential.user.uid), {
         name,
         email,
-        baseRole: registrationRole,
-        role: registrationRole,
-        isActive: true,
+        baseRole: state.selectedRole,
+        role: state.selectedRole,
+        canManageCollection: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-    } catch (firestoreProfileError) {
-      console.error("Conta criada, mas o perfil no Firestore será tentado novamente:", firestoreProfileError);
 
-      setTimeout(async () => {
-        try {
-          await ensureUserDocument(
-            credential.user,
-            name,
-            registrationRole
-          );
-        } catch (retryError) {
-          console.warn("Nova tentativa de sincronização do perfil:", retryError);
-        }
-      }, 1500);
+      try {
+        await sendEmailVerification(credential.user);
+      } catch (verificationError) {
+        console.warn("Não foi possível enviar a verificação:", verificationError);
+      }
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
     }
-
-    state.registrationInProgress = false;
-    state.pendingRegistrationName = "";
-    state.pendingRegistrationRole = "";
-
-    // Agora o documento pode ser acompanhado normalmente.
-    startUserListener(credential.user);
 
     closeAuth();
-    updateAccessState();
-    renderAll();
-    setView("profile");
-
-    setFirebaseStatus(
-      verificationSent
-        ? "Conta criada. Confirme o e-mail institucional para liberar as funções."
-        : "Conta criada. Use Reenviar confirmação para receber o link de validação.",
-      "pending"
-    );
-
-    if (!verificationSent) {
-      alert(
-        "Sua conta foi criada, mas o primeiro envio da confirmação não foi concluído. " +
-        "Na tela seguinte, clique em Reenviar confirmação."
-      );
-    }
+    setView("home");
   } catch (error) {
-    console.error("Erro ao criar conta:", error);
-
-    // Só mostramos "já existe" quando a criação do Authentication realmente
-    // não ocorreu nesta tentativa.
+    console.error(error);
     setAuthMessage(mapFirebaseError(error), "error");
   } finally {
-    if (!credential) {
-      state.registrationInProgress = false;
-      state.pendingRegistrationName = "";
-      state.pendingRegistrationRole = "";
-    }
     elements.authSubmitButton.disabled = false;
   }
 });
@@ -7614,14 +3746,8 @@ applyTheme(state.theme);
 renderAll();
 updateAccessState();
 
-if (LOCAL_MODE) {
-  loadLocalData();
-  renderAll();
-  updateAccessState();
-  setFirebaseStatus(
-    "Firebase ainda não configurado. Conecte o projeto para autenticar usuários.",
-    "pending"
-  );
+if (!firebaseConfigured) {
+  setFirebaseStatus("Firebase ainda não configurado. Insira o firebaseConfig para sincronizar os dispositivos.", "pending");
 } else {
   try {
     app = initializeApp(firebaseConfig);
@@ -7629,13 +3755,11 @@ if (LOCAL_MODE) {
     db = getFirestore(app);
     setFirebaseStatus("Conectando ao Firebase...", "pending");
     startBooksListener();
-    startPublicContentListeners();
 
     onAuthStateChanged(auth, async firebaseUser => {
       stopListener("user");
       stopPrivateListeners();
       state.authUser = firebaseUser;
-      state.authClaims = {};
       state.currentUser = null;
       state.lastAccessSignature = "";
 
@@ -7645,118 +3769,12 @@ if (LOCAL_MODE) {
         return;
       }
 
-      // Durante um cadastro recém-iniciado, o formulário ainda está
-      // sincronizando nome e perfil. Não criamos outro documento aqui.
-      if (state.registrationInProgress) {
-        state.currentUser = buildPendingProfileFromAuth(
-          firebaseUser,
-          state.pendingRegistrationRole,
-          state.pendingRegistrationName
-        );
-        updateAccessState();
-        renderAll();
-        setView("profile");
-        return;
-      }
-
-      setFirebaseStatus("Carregando perfil e permissões da conta...", "pending");
-
       try {
-        // Atualiza o estado do Authentication, principalmente emailVerified.
-        await reload(firebaseUser);
-        await getIdToken(firebaseUser, true);
-        state.authUser = firebaseUser;
-        await loadAuthClaims(firebaseUser, false);
-
-        // Primeiro lê o perfil real. Em contas já existentes isso evita qualquer
-        // tentativa de escrita desnecessária antes de descobrir a função atual.
-        const userRef = doc(db, "users", firebaseUser.uid);
-        let userSnapshot = await getDoc(userRef);
-
-        // Somente cria o perfil se ele realmente ainda não existir.
-        if (!userSnapshot.exists()) {
-          await ensureUserDocument(firebaseUser);
-          userSnapshot = await getDoc(userRef);
-        }
-
-        if (!userSnapshot.exists()) {
-          throw new Error("Perfil do usuário não encontrado no Firestore.");
-        }
-
-        state.currentUser = normalizeUserSnapshot(userSnapshot);
-        state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-
-        if (!isActualAdministrator(state.currentUser)) {
-          state.adminViewRole = "";
-          sessionStorage.removeItem("techlibAdminViewRole");
-        } else if (!ADMIN_VIEW_ROLES.includes(state.adminViewRole)) {
-          state.adminViewRole = "Administrador";
-          sessionStorage.setItem("techlibAdminViewRole", "Administrador");
-        }
-
-        updateAccessState();
-        startPrivateDataListeners();
-        renderAll();
-
-        if (!state.currentUser.isActive) {
-          setFirebaseStatus(
-            "Perfil desativado. Procure a administração ou a biblioteca.",
-            "error"
-          );
-          setView("profile");
-        } else if (canOperateLibrary(state.currentUser)) {
-          setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
-        } else if (!firebaseUser.emailVerified) {
-          setFirebaseStatus(
-            "Conta conectada. Confirme o e-mail institucional para liberar as funções de aluno ou professor.",
-            "pending"
-          );
-          setView("profile");
-        } else {
-          setFirebaseStatus("Conta conectada ao TechLib.", "ready");
-        }
-
-        // O listener mantém role e isActive sincronizados. A permissão de Aluno
-        // operador é uma Custom Claim e entra em vigor quando o usuário recebe um novo token,
-        // normalmente ao sair e entrar novamente na conta.
+        await ensureUserDocument(firebaseUser);
         startUserListener(firebaseUser);
-
-        if (firebaseUser.emailVerified) {
-          try {
-            await syncAuthenticatedEmailToProfile(firebaseUser);
-          } catch (syncError) {
-            console.warn("Sincronização de e-mail pendente:", syncError);
-          }
-        }
       } catch (error) {
-        console.error("Erro ao preparar a conta autenticada:", error);
-
-        // Mantém os dados básicos da sessão. Se a claim operator estiver ativa,
-        // o acesso operacional não depende da leitura complementar de users/{uid}.
-        state.currentUser = buildPendingProfileFromAuth(firebaseUser);
-        state.currentUser.emailVerified = Boolean(firebaseUser.emailVerified);
-        state.currentUser.isActive = true;
-
-        if (hasOperatorClaim()) {
-          state.currentUser.baseRole = "Aluno";
-          state.currentUser.role = "Aluno";
-          updateAccessState();
-          startPrivateDataListeners();
-          renderAll();
-          setView(state.currentView || "home");
-          setFirebaseStatus(
-            "Conta conectada. Acesso de aluno operador ativo.",
-            "ready"
-          );
-        } else {
-          updateAccessState();
-          renderAll();
-          setView("profile");
-          setFirebaseStatus(
-            "Não foi possível carregar completamente o perfil da conta.",
-            "error"
-          );
-        }
+        console.error("Erro ao preparar perfil:", error);
+        setFirebaseStatus("Não foi possível preparar o perfil do usuário.", "error");
       }
     });
   } catch (error) {
@@ -7764,5 +3782,8 @@ if (LOCAL_MODE) {
     setFirebaseStatus("Configuração do Firebase inválida.", "error");
   }
 }
-</script></body>
+</script>
+
+<script type="module" src="/delete-account-ui.js"></script>
+</body>
 </html>
