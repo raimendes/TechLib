@@ -1104,6 +1104,17 @@
       margin-top: 12px;
     }
 
+    #studentPermissionSearchResults {
+      max-height: 180px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+
+    #studentPermissionSearchResults > * {
+      min-height: 55px;
+    }
+
     .permission-user {
       display: grid;
       grid-template-columns: 1fr auto;
