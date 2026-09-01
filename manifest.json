@@ -1,12 +1,25 @@
 {
-  "background_color": "#ffffff",
-  "description": "TechLib - Plataforma de gestão da biblioteca escolar.",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "tech-lib.vercel",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "tech-lib.vercel",
+  "name": "TechLib",
+  "short_name": "TechLib",
+  "description": "Plataforma de gestão da biblioteca escolar.",
   "start_url": "/",
-  "theme_color": "#1558d6"
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f9",
+  "theme_color": "#1558d6",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
