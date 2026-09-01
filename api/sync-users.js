@@ -1,107 +1,299 @@
 // TechLib - Sincronização administrativa de usuários
 // Firebase Authentication → Firestore users/{uid}
 
-import admin from "firebase-admin";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Método não permitido"
-    });
+
+function getAdminApp() {
+  if (getApps().length) return getApps()[0];
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId || !clientEmail || !rawPrivateKey) {
+    throw new Error(
+      "Variáveis FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY não configuradas no Vercel."
+    );
   }
 
+  return initializeApp({
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey: rawPrivateKey.replace(/\\n/g, "\n")
+    }),
+    projectId
+  });
+}
+
+
+function send(res, status, body) {
+  return res.status(status).json(body);
+}
+
+
+function getBearerToken(req) {
+  const header = String(req.headers.authorization || "");
+
+  if (!header.startsWith("Bearer ")) {
+    return "";
+  }
+
+  return header.slice(7).trim();
+}
+
+
+async function requireAdmin(adminAuth, adminDb, req) {
+
+  const token = getBearerToken(req);
+
+  if (!token) {
+    throw {
+      status: 401,
+      message: "Token de autenticação não enviado."
+    };
+  }
+
+
+  let decoded;
+
   try {
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
-        })
+    decoded = await adminAuth.verifyIdToken(token);
+  } catch {
+    throw {
+      status: 401,
+      message: "Sessão inválida ou expirada."
+    };
+  }
+
+
+  if (decoded.email_verified !== true) {
+    throw {
+      status: 403,
+      message: "E-mail da conta administrativa não confirmado."
+    };
+  }
+
+
+  const profileSnapshot = await adminDb
+    .doc(`users/${decoded.uid}`)
+    .get();
+
+
+  if (!profileSnapshot.exists) {
+    throw {
+      status: 403,
+      message: "Perfil administrativo não encontrado."
+    };
+  }
+
+
+  const profile = profileSnapshot.data() || {};
+
+  const role = String(
+    profile.role ||
+    profile.baseRole ||
+    ""
+  ).trim();
+
+
+  if (!["Administrador", "Bibliotecário"].includes(role)) {
+    throw {
+      status: 403,
+      message: "Usuário sem permissão para sincronizar usuários."
+    };
+  }
+
+
+  return decoded;
+}
+
+
+
+export default async function handler(req, res) {
+
+  res.setHeader("Cache-Control", "no-store");
+
+
+  try {
+
+    const app = getAdminApp();
+
+    const adminAuth = getAuth(app);
+
+    const adminDb = getFirestore(app);
+
+
+    if (req.method !== "POST") {
+
+      return send(res, 405, {
+        ok: false,
+        checked: 0,
+        created: 0,
+        errors: [
+          "Método não permitido."
+        ]
       });
+
     }
 
-    const auth = admin.auth();
-    const db = admin.firestore();
+
+    await requireAdmin(
+      adminAuth,
+      adminDb,
+      req
+    );
+
 
     let checked = 0;
     let created = 0;
+
     const errors = [];
 
-    let nextPageToken;
+    let pageToken;
+
 
     do {
-      const result = await auth.listUsers(1000, nextPageToken);
+
+      const result = await adminAuth.listUsers(
+        1000,
+        pageToken
+      );
+
 
       for (const user of result.users) {
+
         checked++;
 
+
         try {
-          const userRef = db.collection("users").doc(user.uid);
+
+          const userRef = adminDb.doc(
+            `users/${user.uid}`
+          );
+
+
           const snapshot = await userRef.get();
 
-          // Usuário já possui perfil, não altera nada
+
+          // Não altera perfis existentes
           if (snapshot.exists) {
             continue;
           }
 
-          const email = String(user.email || "").toLowerCase();
+
+          const email = String(
+            user.email || ""
+          ).toLowerCase();
+
 
           let role = "Aluno";
 
-          if (email.endsWith("@educar.rn.gov.br")) {
+
+          if (
+            email.endsWith("@educar.rn.gov.br")
+          ) {
             role = "Professor";
           }
 
-          const name =
-            user.displayName ||
-            email.split("@")[0] ||
-            "Usuário TechLib";
 
           await userRef.set({
+
             uid: user.uid,
-            name,
+
+            name:
+              user.displayName ||
+              email.split("@")[0] ||
+              "Usuário TechLib",
+
             email,
+
             baseRole: role,
+
             role,
+
             isActive: true,
+
             operatorEnabled: false,
-            emailVerified: Boolean(user.emailVerified),
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+
+            emailVerified:
+              Boolean(user.emailVerified),
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+
+            updatedAt:
+              FieldValue.serverTimestamp()
+
           });
+
 
           created++;
 
-        } catch (error) {
+
+        } catch(error) {
+
           errors.push({
+
             uid: user.uid,
-            email: user.email,
+
+            email: user.email || "",
+
             error: error.message
+
           });
+
         }
+
       }
 
-      nextPageToken = result.pageToken;
 
-    } while (nextPageToken);
+      pageToken = result.pageToken;
 
 
-    return res.status(200).json({
-      success: true,
+    } while(pageToken);
+
+
+
+    return send(res, 200, {
+
+      ok: true,
+
       checked,
+
       created,
+
       errors
+
     });
 
 
-  } catch (error) {
+  } catch(error) {
 
-    console.error("Erro na sincronização:", error);
+    console.error(
+      "TechLib sync-users API:",
+      error
+    );
 
-    return res.status(500).json({
-      success: false,
-      error: error.message
+
+    return send(res, error.status || 500, {
+
+      ok: false,
+
+      checked: 0,
+
+      created: 0,
+
+      errors: [
+        error.message ||
+        "Erro interno no servidor."
+      ]
+
     });
+
   }
+
 }
