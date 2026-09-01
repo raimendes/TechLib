@@ -1,57 +1,66 @@
-const CACHE_NAME = "techlib-v1";
-
-const FILES_TO_CACHE = [
+const CACHE_NAME = "techlib-shell-v1";
+const APP_SHELL = [
   "/",
   "/index.html",
   "/styles.css",
   "/script.js",
+  "/firebase.js",
+  "/storage.js",
   "/manifest.json",
   "/assets/icon-192.png",
   "/assets/icon-512.png"
 ];
 
-
-// Instala o Service Worker
-self.addEventListener("install", (event) => {
-
+self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-
-        return cache.addAll(FILES_TO_CACHE);
-
-      })
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
-
-  self.skipWaiting();
-
 });
 
-
-// Ativa o Service Worker
-self.addEventListener("activate", (event) => {
-
+self.addEventListener("activate", event => {
   event.waitUntil(
-
-    self.clients.claim()
-
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
-
 });
 
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  const url = new URL(request.url);
 
-// Intercepta requisições
-self.addEventListener("fetch", (event) => {
+  if (
+    request.method !== "GET" ||
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith("/api/")
+  ) {
+    return;
+  }
 
   event.respondWith(
-
-    caches.match(event.request)
-      .then((cachedResponse) => {
-
-        return cachedResponse || fetch(event.request);
-
+    fetch(request)
+      .then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        }
+        return response;
       })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
 
+        if (request.mode === "navigate") {
+          return caches.match("/index.html");
+        }
+
+        return Response.error();
+      })
   );
-
 });
