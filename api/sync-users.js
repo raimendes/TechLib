@@ -7,148 +7,222 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 
 function getAdminApp() {
-  if (getApps().length) return getApps()[0];
+
+  if (getApps().length) {
+    return getApps()[0];
+  }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !rawPrivateKey) {
+
+  if (!projectId || !clientEmail || !privateKey) {
+
     throw new Error(
-      "Variáveis FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY não configuradas no Vercel."
+      "Configuração Firebase Admin incompleta. Verifique FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY."
     );
+
   }
+
 
   return initializeApp({
+
     credential: cert({
+
       projectId,
+
       clientEmail,
-      privateKey: rawPrivateKey.replace(/\\n/g, "\n")
-    }),
-    projectId
+
+      privateKey: privateKey.replace(/\\n/g, "\n")
+
+    })
+
   });
+
 }
 
 
-function send(res, status, body) {
-  return res.status(status).json(body);
+
+function response(res, status, data) {
+
+  return res.status(status).json(data);
+
 }
 
 
-function getBearerToken(req) {
-  const header = String(req.headers.authorization || "");
 
-  if (!header.startsWith("Bearer ")) {
-    return "";
+function getToken(req) {
+
+  const authorization = String(
+    req.headers.authorization || ""
+  );
+
+
+  if (!authorization.startsWith("Bearer ")) {
+
+    return null;
+
   }
 
-  return header.slice(7).trim();
+
+  return authorization.substring(7);
+
 }
 
 
-async function requireAdmin(adminAuth, adminDb, req) {
 
-  const token = getBearerToken(req);
+async function validateAdmin(adminAuth, db, req) {
+
+
+  const token = getToken(req);
+
 
   if (!token) {
+
     throw {
       status: 401,
-      message: "Token de autenticação não enviado."
+      message: "Token não informado."
     };
+
   }
+
 
 
   let decoded;
 
+
   try {
+
     decoded = await adminAuth.verifyIdToken(token);
+
   } catch {
+
     throw {
       status: 401,
-      message: "Sessão inválida ou expirada."
+      message: "Token inválido ou expirado."
     };
+
   }
 
 
-  if (decoded.email_verified !== true) {
+
+  if (!decoded.email_verified) {
+
     throw {
       status: 403,
-      message: "E-mail da conta administrativa não confirmado."
+      message: "E-mail ainda não confirmado."
     };
+
   }
 
 
-  const profileSnapshot = await adminDb
-    .doc(`users/${decoded.uid}`)
+
+  const profile = await db
+    .collection("users")
+    .doc(decoded.uid)
     .get();
 
 
-  if (!profileSnapshot.exists) {
+
+  if (!profile.exists) {
+
     throw {
       status: 403,
-      message: "Perfil administrativo não encontrado."
+      message: "Perfil do usuário não encontrado."
     };
+
   }
 
 
-  const profile = profileSnapshot.data() || {};
+
+  const data = profile.data();
+
+
 
   const role = String(
-    profile.role ||
-    profile.baseRole ||
+    data.role ||
+    data.baseRole ||
     ""
   ).trim();
 
 
-  if (!["Administrador", "Bibliotecário"].includes(role)) {
+
+  if (
+    role !== "Administrador" &&
+    role !== "Bibliotecário"
+  ) {
+
     throw {
       status: 403,
-      message: "Usuário sem permissão para sincronizar usuários."
+      message: "Usuário sem permissão."
     };
+
   }
 
 
   return decoded;
+
 }
+
 
 
 
 export default async function handler(req, res) {
 
-  res.setHeader("Cache-Control", "no-store");
+
+  res.setHeader(
+    "Cache-Control",
+    "no-store"
+  );
+
 
 
   try {
 
+
     const app = getAdminApp();
+
 
     const adminAuth = getAuth(app);
 
-    const adminDb = getFirestore(app);
+
+    const db = getFirestore(app);
+
 
 
     if (req.method !== "POST") {
 
-      return send(res, 405, {
+
+      return response(res, 405, {
+
         ok: false,
+
         checked: 0,
+
         created: 0,
+
         errors: [
           "Método não permitido."
         ]
+
       });
+
 
     }
 
 
-    await requireAdmin(
+
+    await validateAdmin(
       adminAuth,
-      adminDb,
+      db,
       req
     );
 
 
+
     let checked = 0;
+
     let created = 0;
 
     const errors = [];
@@ -156,7 +230,9 @@ export default async function handler(req, res) {
     let pageToken;
 
 
+
     do {
+
 
       const result = await adminAuth.listUsers(
         1000,
@@ -164,25 +240,34 @@ export default async function handler(req, res) {
       );
 
 
+
       for (const user of result.users) {
+
 
         checked++;
 
 
+
         try {
 
-          const userRef = adminDb.doc(
-            `users/${user.uid}`
-          );
+
+          const userRef = db
+            .collection("users")
+            .doc(user.uid);
 
 
-          const snapshot = await userRef.get();
+
+          const existing = await userRef.get();
 
 
-          // Não altera perfis existentes
-          if (snapshot.exists) {
+
+          // Não altera usuários existentes
+          if (existing.exists) {
+
             continue;
+
           }
+
 
 
           const email = String(
@@ -190,51 +275,78 @@ export default async function handler(req, res) {
           ).toLowerCase();
 
 
+
           let role = "Aluno";
+
 
 
           if (
             email.endsWith("@educar.rn.gov.br")
           ) {
+
             role = "Professor";
+
           }
+
 
 
           await userRef.set({
 
+
             uid: user.uid,
+
 
             name:
               user.displayName ||
               email.split("@")[0] ||
               "Usuário TechLib",
 
+
+
             email,
+
+
 
             baseRole: role,
 
+
+
             role,
+
+
 
             isActive: true,
 
+
+
             operatorEnabled: false,
+
+
 
             emailVerified:
               Boolean(user.emailVerified),
 
+
+
             createdAt:
               FieldValue.serverTimestamp(),
+
+
 
             updatedAt:
               FieldValue.serverTimestamp()
 
+
           });
+
 
 
           created++;
 
 
-        } catch(error) {
+
+        } catch (error) {
+
 
           errors.push({
 
@@ -246,54 +358,81 @@ export default async function handler(req, res) {
 
           });
 
+
         }
 
+
       }
+
 
 
       pageToken = result.pageToken;
 
 
-    } while(pageToken);
+
+    } while (pageToken);
 
 
 
-    return send(res, 200, {
+
+    return response(res, 200, {
+
 
       ok: true,
 
+
       checked,
+
 
       created,
 
+
       errors
+
 
     });
 
 
-  } catch(error) {
+
+
+  } catch (error) {
+
+
 
     console.error(
-      "TechLib sync-users API:",
+      "sync-users:",
       error
     );
 
 
-    return send(res, error.status || 500, {
 
-      ok: false,
+    return response(
+      res,
+      error.status || 500,
+      {
 
-      checked: 0,
 
-      created: 0,
+        ok: false,
 
-      errors: [
-        error.message ||
-        "Erro interno no servidor."
-      ]
 
-    });
+        checked: 0,
+
+
+        created: 0,
+
+
+        errors: [
+
+          error.message ||
+          "Erro interno."
+
+        ]
+
+      }
+    );
+
 
   }
+
 
 }
