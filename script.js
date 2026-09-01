@@ -345,6 +345,13 @@ function normalizeUserSnapshot(snapshot) {
     uid: snapshot.id,
     name: String(data.name || "").trim(),
     email: String(data.email || "").toLowerCase(),
+    registration: String(
+      data.registration ||
+      data.matricula ||
+      data.enrollment ||
+      data.studentId ||
+      ""
+    ).trim(),
     baseRole,
     role,
     operatorEnabled: data.operatorEnabled === true,
@@ -2482,22 +2489,29 @@ function renderStudentPermissionSearchResults() {
   if (!container || !summary) return;
 
   const term = normalize(state.studentPermissionSearch.trim());
-  const students = state.users.filter(user => user.baseRole === "Aluno");
+  const allStudents = state.users
+    .filter(user => user.baseRole === "Aluno")
+    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
 
-  if (term.length < 3) {
-    summary.textContent = "Digite pelo menos três caracteres.";
-    container.innerHTML = "";
-    return;
-  }
-
-  const matches = students
-    .filter(user => normalize(`${user.name} ${user.email}`).includes(term))
-    .slice(0, 10);
+  const matches = term
+    ? allStudents.filter(user => {
+        const registration = String(
+          user.registration ||
+          user.matricula ||
+          user.enrollment ||
+          user.studentId ||
+          ""
+        );
+        return normalize(
+          `${getUserVisibleName(user)} ${registration} ${user.email || ""}`
+        ).includes(term);
+      })
+    : allStudents;
 
   summary.textContent = matches.length
-    ? `${matches.length} ${matches.length === 1 ? "aluno encontrado" : "alunos encontrados"}`
-    : students.length
-      ? "Nenhum aluno encontrado com esse nome ou e-mail."
+    ? `${matches.length} ${matches.length === 1 ? "aluno disponível" : "alunos disponíveis"}`
+    : allStudents.length
+      ? "Nenhum aluno encontrado com esse nome, matrícula ou e-mail."
       : "Nenhum perfil de aluno está sincronizado no Firestore.";
 
   container.innerHTML = matches.map(user => {
@@ -2581,52 +2595,6 @@ function renderUserPermissionsCard() {
       `).join("")
     : '<div class="empty-state">Nenhum aluno operador autorizado.</div>';
 
-  const availableStudents = students
-    .filter(user => user.operatorEnabled !== true)
-    .sort((a, b) => getUserVisibleName(a).localeCompare(getUserVisibleName(b), "pt-BR"));
-
-  const showSyncedStudents = students.length > 0 && students.length <= 10;
-
-  const syncedStudentsContent = showSyncedStudents
-    ? availableStudents.length
-      ? availableStudents.map(user => {
-          const active = user.isActive !== false;
-          return `
-            <div class="permission-user">
-              <div>
-                <strong>${escapeHtml(getUserVisibleName(user))}</strong>
-                <span>${escapeHtml(user.email)}</span>
-                <div class="user-status-row">
-                  <span class="user-status-badge ${active ? "active" : "inactive"}">
-                    ${active ? "Ativo" : "Desativado"}
-                  </span>
-                </div>
-              </div>
-              <div class="permission-actions">
-                ${getEffectiveRole() === "Administrador" && !hasValidUserName(user) ? `
-                  <button
-                    class="small-button"
-                    onclick="editManagedStudentName('${user.uid}')"
-                  >
-                    Corrigir nome
-                  </button>
-                ` : ""}
-                ${active ? `
-                  <button class="small-button" onclick="toggleStudentCollectionPermission('${user.uid}', true)">
-                    Conceder acesso
-                  </button>
-                ` : `
-                  <button class="small-button success-outline" onclick="toggleUserActiveStatus('${user.uid}', true)">
-                    Reativar perfil
-                  </button>
-                `}
-              </div>
-            </div>
-          `;
-        }).join("")
-      : '<div class="empty-state">Todos os alunos sincronizados já são operadores.</div>'
-    : "";
-
   return `
     <article class="management-card">
       <h3>Alunos operadores</h3>
@@ -2647,30 +2615,20 @@ function renderUserPermissionsCard() {
         ${operatorsContent}
       </div>
 
-      ${showSyncedStudents ? `
-        <div class="permission-section-title">Alunos sincronizados</div>
-        <div class="permission-list">
-          ${syncedStudentsContent}
-        </div>
-      ` : ""}
-
       <div class="permission-search">
         <label for="studentPermissionSearch">Pesquisar aluno</label>
         <input
           id="studentPermissionSearch"
           type="search"
           autocomplete="off"
-          placeholder="Nome ou e-mail institucional"
+          placeholder="Nome, matrícula ou e-mail institucional"
           value="${escapeHtml(state.studentPermissionSearch)}"
-          oninput="updateStudentPermissionSearch(this.value)"
         >
         <p class="permission-search-help">
-          ${showSyncedStudents
-            ? "Os alunos sincronizados estão listados acima. Você também pode pesquisar por nome ou e-mail."
-            : "Como há muitos alunos sincronizados, digite pelo menos três caracteres para pesquisar."}
+          A pesquisa filtra os alunos já carregados por nome, matrícula ou e-mail.
         </p>
         <p class="permission-result-summary" id="studentPermissionSearchSummary">
-          Digite pelo menos três caracteres.
+          Carregando alunos disponíveis...
         </p>
         <div class="permission-list" id="studentPermissionSearchResults"></div>
       </div>
@@ -2806,6 +2764,12 @@ function renderManagement() {
       ${renderUserSyncCard()}
     </div>
   `;
+
+  const studentSearchInput = document.getElementById("studentPermissionSearch");
+  studentSearchInput?.addEventListener("input", event => {
+    state.studentPermissionSearch = String(event.currentTarget.value || "");
+    renderStudentPermissionSearchResults();
+  });
 
   renderStudentPermissionSearchResults();
 }
