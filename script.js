@@ -2732,16 +2732,20 @@ function renderAdminRolesCard() {
 }
 
 function renderUserSyncCard() {
-  if (!isActualAdministrator()) return "";
+  if (!["Administrador", "Bibliotecário"].includes(state.currentUser?.role)) return "";
 
   const result = state.userSyncResult;
   const errors = Array.isArray(result?.errors) ? result.errors : [];
-  const resultContent = result ? `
+  const resultContent = state.userSyncBusy ? `
+    <div class="book-import-status">
+      <strong>Sincronizando usuários...</strong>
+    </div>
+  ` : result ? `
     <div class="book-import-status ${result.ok ? "ready" : "duplicate"}">
       ${result.ok ? `
         <strong>Usuários verificados: ${Number(result.checked || 0)}</strong>
         <span>Perfis criados: ${Number(result.created || 0)}</span>
-        <span>Erros encontrados: ${errors.length}</span>
+        <span>Erros:</span>
         ${errors.length ? `
           <ul>
             ${errors.map(error => `<li>${escapeHtml(
@@ -2750,7 +2754,7 @@ function renderUserSyncCard() {
                 : error?.message || JSON.stringify(error)
             )}</li>`).join("")}
           </ul>
-        ` : ""}
+        ` : "<span>Nenhum erro.</span>"}
       ` : `
         <strong>Não foi possível sincronizar os usuários.</strong>
         <span>${escapeHtml(result.message || "Erro inesperado na sincronização.")}</span>
@@ -2761,7 +2765,7 @@ function renderUserSyncCard() {
   return `
     <article class="management-card">
       <h3>Sincronizar usuários</h3>
-      <p>Verifica usuários do Firebase Authentication que ainda não possuem perfil no Firestore.</p>
+      <p>Verifica usuários do Firebase Authentication sem perfil correspondente no Firestore.</p>
       <div class="management-actions">
         <button
           class="small-button"
@@ -3126,13 +3130,16 @@ window.confirmNewAccountEmail = async function() {
 };
 
 window.syncUsers = async function() {
-  if (!isActualAdministrator() || state.userSyncBusy) return;
+  if (
+    !["Administrador", "Bibliotecário"].includes(state.currentUser?.role) ||
+    state.userSyncBusy
+  ) return;
 
   const firebaseUser = auth?.currentUser;
   if (!firebaseUser) {
     state.userSyncResult = {
       ok: false,
-      message: "Entre novamente na conta administrativa para sincronizar os usuários.",
+      message: "Sua sessão expirou. Entre novamente para sincronizar os usuários.",
       errors: []
     };
     renderManagement();
@@ -3163,9 +3170,15 @@ window.syncUsers = async function() {
     const errors = Array.isArray(payload.errors) ? payload.errors : [];
 
     if (!response.ok) {
+      const errorMessage = response.status === 401
+        ? "Sua sessão expirou. Entre novamente para sincronizar os usuários."
+        : response.status === 403
+          ? "Seu usuário não possui permissão para sincronizar usuários."
+          : payload.error || `Falha da API de sincronização (status ${response.status}).`;
+
       state.userSyncResult = {
         ok: false,
-        message: payload.error || `A API respondeu com status ${response.status}.`,
+        message: errorMessage,
         checked: Number(payload.checked || 0),
         created: Number(payload.created || 0),
         errors
@@ -3181,9 +3194,16 @@ window.syncUsers = async function() {
     };
   } catch (error) {
     console.error("Erro ao sincronizar usuários:", error);
+    const expiredSessionCodes = [
+      "auth/id-token-expired",
+      "auth/user-token-expired",
+      "auth/user-disabled"
+    ];
     state.userSyncResult = {
       ok: false,
-      message: error?.message || "Falha de conexão com a API de sincronização.",
+      message: expiredSessionCodes.includes(error?.code)
+        ? "Sua sessão expirou. Entre novamente para sincronizar os usuários."
+        : "Falha ao acessar a API de sincronização. Tente novamente.",
       errors: []
     };
   } finally {
