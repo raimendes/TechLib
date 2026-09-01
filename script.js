@@ -40,15 +40,20 @@ function hasOperatorClaim() {
   return state.authClaims?.operator === true;
 }
 
-async function loadAuthClaims(firebaseUser = auth?.currentUser, forceRefresh = false) {
+async function loadAuthClaims(
+  firebaseUser = auth?.currentUser,
+  forceRefresh = false,
+  applyToState = true
+) {
   if (LOCAL_MODE || !firebaseUser) {
-    state.authClaims = {};
-    return state.authClaims;
+    if (applyToState) state.authClaims = {};
+    return {};
   }
 
   const tokenResult = await getIdTokenResult(firebaseUser, forceRefresh);
-  state.authClaims = tokenResult?.claims || {};
-  return state.authClaims;
+  const claims = tokenResult?.claims || {};
+  if (applyToState) state.authClaims = claims;
+  return claims;
 }
 
 async function callOperatorAccessApi(uid, grant) {
@@ -131,6 +136,7 @@ const state = {
   editingBookId: null,
   authUser: null,
   authClaims: {},
+  authSessionVersion: 0,
   currentUser: null,
   localMode: LOCAL_MODE,
   adminViewRole: sessionStorage.getItem("techlibAdminViewRole") || "",
@@ -149,6 +155,8 @@ const state = {
   bookImportFileName: "",
   bookImportBusy: false,
   bookImportMessage: "",
+  userSyncBusy: false,
+  userSyncResult: null,
   profileEditOpen: false,
   registrationInProgress: false,
   pendingRegistrationName: "",
@@ -738,8 +746,40 @@ function stopPrivateListeners() {
   stopListener("users");
   state.loans = [];
   state.reservations = [];
-  state.users = state.currentUser ? [state.currentUser] : [];
+  state.users = [];
   state.privateDataLoaded = false;
+}
+
+function clearAuthenticatedUserState() {
+  stopListener("user");
+  stopPrivateListeners();
+
+  state.authSessionVersion += 1;
+  state.authUser = null;
+  state.currentUser = null;
+  state.authClaims = {};
+  state.adminViewRole = "";
+  state.lastAccessSignature = "";
+  state.profileEditOpen = false;
+
+  state.bookFormOpen = false;
+  state.editingBookId = null;
+  state.bookImportRows = [];
+  state.bookImportFileName = "";
+  state.bookImportBusy = false;
+  state.bookImportMessage = "";
+  state.userSyncBusy = false;
+  state.userSyncResult = null;
+
+  state.eventFormOpen = false;
+  state.editingEventId = null;
+  state.tavolaFormOpen = false;
+  state.editingTavolaId = null;
+  state.studentPermissionSearch = "";
+
+  state.currentView = "home";
+  sessionStorage.removeItem("techlibAdminViewRole");
+  sessionStorage.setItem("techlibCurrentView", "home");
 }
 
 function sortBooks() {
@@ -850,42 +890,47 @@ async function ensureUserDocument(
 
   const email = String(firebaseUser.email || "").toLowerCase();
   const emailPrefix = email.split("@")[0];
-  const authName = String(
+  const availableName = String(
     preferredName ||
     firebaseUser.displayName ||
     ""
   ).trim();
+  const authName = String(
+    availableName ||
+    emailPrefix ||
+    "Usuário"
+  ).trim();
 
-  const detectedRole = preferredRole || (
-    email.endsWith(`@${ROLE_DOMAINS.Professor}`)
+  const detectedRole = ["Aluno", "Professor"].includes(preferredRole)
+    ? preferredRole
+    : email.endsWith(`@${ROLE_DOMAINS.Professor}`)
       ? "Professor"
-      : "Aluno"
-  );
+      : "Aluno";
 
   if (snapshot.exists()) {
     const data = snapshot.data();
     const storedName = String(data.name || "").trim();
+    const storedEmail = String(data.email || "").trim().toLowerCase();
+    const profileUpdates = {};
 
-    if (
-      authName &&
-      (
-        !storedName ||
-        storedName.toLowerCase() === "usuário" ||
-        storedName.toLowerCase() === "usuario" ||
-        storedName === emailPrefix ||
-        /^\d+$/.test(storedName)
-      ) &&
-      storedName !== authName
-    ) {
+    if (availableName && storedName !== availableName) {
+      profileUpdates.name = availableName;
+    }
+
+    if (email && storedEmail !== email) {
+      profileUpdates.email = email;
+    }
+
+    if (Object.keys(profileUpdates).length) {
       try {
         await updateDoc(userRef, {
-          name: authName,
+          ...profileUpdates,
           updatedAt: serverTimestamp()
         });
-      } catch (nameRepairError) {
+      } catch (profileUpdateError) {
         // A conta já existe e continua válida. Uma eventual falha ao
-        // corrigir o nome não deve impedir o carregamento do perfil.
-        console.warn("Não foi possível reparar automaticamente o nome:", nameRepairError);
+        // sincronizar nome ou e-mail não deve impedir o carregamento do perfil.
+        console.warn("Não foi possível sincronizar nome ou e-mail:", profileUpdateError);
       }
     }
 
@@ -893,14 +938,43 @@ async function ensureUserDocument(
   }
 
   await setDoc(userRef, {
-    name: authName || "",
+    uid: firebaseUser.uid,
+    name: authName,
     email,
     baseRole: detectedRole,
     role: detectedRole,
     isActive: true,
+    operatorEnabled: false,
+    emailVerified: Boolean(firebaseUser.emailVerified),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+}
+
+function getProfileLoadErrorMessage(error) {
+  const code = String(error?.code || "").toLowerCase();
+
+  if (code === "profile/not-found") {
+    return "O perfil não existe no Firestore e não pôde ser criado automaticamente.";
+  }
+
+  if (code === "permission-denied" || code === "firestore/permission-denied") {
+    return "O acesso ao perfil foi negado pelas regras do Firestore.";
+  }
+
+  if (
+    code === "unavailable" ||
+    code === "firestore/unavailable" ||
+    code === "deadline-exceeded" ||
+    code === "firestore/deadline-exceeded" ||
+    code === "network-request-failed" ||
+    code === "auth/network-request-failed" ||
+    globalThis.navigator?.onLine === false
+  ) {
+    return "Não foi possível conectar ao Firebase para carregar o perfil. Verifique sua internet e tente novamente.";
+  }
+
+  return "Ocorreu um erro inesperado ao carregar o perfil da conta.";
 }
 
 function startUserListener(firebaseUser) {
@@ -909,6 +983,7 @@ function startUserListener(firebaseUser) {
   unsubscribers.user = onSnapshot(
     doc(db, "users", firebaseUser.uid),
     snapshot => {
+      if (state.authUser?.uid !== firebaseUser.uid) return;
       if (!snapshot.exists()) return;
 
       state.currentUser = normalizeUserSnapshot(snapshot);
@@ -950,11 +1025,12 @@ function startUserListener(firebaseUser) {
       setView(state.currentView || "home");
     },
     error => {
+      if (state.authUser?.uid !== firebaseUser.uid) return;
       console.error("Erro ao carregar perfil:", error);
       if (canOperateLibrary(state.currentUser)) {
         setFirebaseStatus(getOperationalStatusMessage(state.currentUser), "ready");
       } else {
-        setFirebaseStatus("Não foi possível carregar o perfil do usuário.", "error");
+        setFirebaseStatus(getProfileLoadErrorMessage(error), "error");
       }
     }
   );
@@ -2655,6 +2731,52 @@ function renderAdminRolesCard() {
   `;
 }
 
+function renderUserSyncCard() {
+  if (!isActualAdministrator()) return "";
+
+  const result = state.userSyncResult;
+  const errors = Array.isArray(result?.errors) ? result.errors : [];
+  const resultContent = result ? `
+    <div class="book-import-status ${result.ok ? "ready" : "duplicate"}">
+      ${result.ok ? `
+        <strong>Usuários verificados: ${Number(result.checked || 0)}</strong>
+        <span>Perfis criados: ${Number(result.created || 0)}</span>
+        <span>Erros encontrados: ${errors.length}</span>
+        ${errors.length ? `
+          <ul>
+            ${errors.map(error => `<li>${escapeHtml(
+              typeof error === "string"
+                ? error
+                : error?.message || JSON.stringify(error)
+            )}</li>`).join("")}
+          </ul>
+        ` : ""}
+      ` : `
+        <strong>Não foi possível sincronizar os usuários.</strong>
+        <span>${escapeHtml(result.message || "Erro inesperado na sincronização.")}</span>
+      `}
+    </div>
+  ` : "";
+
+  return `
+    <article class="management-card">
+      <h3>Sincronizar usuários</h3>
+      <p>Verifica usuários do Firebase Authentication que ainda não possuem perfil no Firestore.</p>
+      <div class="management-actions">
+        <button
+          class="small-button"
+          type="button"
+          onclick="syncUsers()"
+          ${state.userSyncBusy ? "disabled" : ""}
+        >
+          ${state.userSyncBusy ? "Sincronizando..." : "Sincronizar usuários"}
+        </button>
+      </div>
+      ${resultContent}
+    </article>
+  `;
+}
+
 function renderManagement() {
   if (!elements.managementContent) return;
 
@@ -2677,6 +2799,7 @@ function renderManagement() {
       ${renderActiveReservationsCard()}
       ${renderUserPermissionsCard()}
       ${renderAdminRolesCard()}
+      ${renderUserSyncCard()}
     </div>
   `;
 
@@ -2999,6 +3122,73 @@ window.confirmNewAccountEmail = async function() {
   } catch (error) {
     console.error("Erro ao confirmar novo e-mail:", error);
     alert(mapFirebaseError(error));
+  }
+};
+
+window.syncUsers = async function() {
+  if (!isActualAdministrator() || state.userSyncBusy) return;
+
+  const firebaseUser = auth?.currentUser;
+  if (!firebaseUser) {
+    state.userSyncResult = {
+      ok: false,
+      message: "Entre novamente na conta administrativa para sincronizar os usuários.",
+      errors: []
+    };
+    renderManagement();
+    return;
+  }
+
+  state.userSyncBusy = true;
+  state.userSyncResult = null;
+  renderManagement();
+
+  try {
+    const idToken = await getIdToken(firebaseUser, true);
+    const response = await fetch("/api/sync-users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      }
+    });
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+
+    const errors = Array.isArray(payload.errors) ? payload.errors : [];
+
+    if (!response.ok) {
+      state.userSyncResult = {
+        ok: false,
+        message: payload.error || `A API respondeu com status ${response.status}.`,
+        checked: Number(payload.checked || 0),
+        created: Number(payload.created || 0),
+        errors
+      };
+      return;
+    }
+
+    state.userSyncResult = {
+      ok: true,
+      checked: Number(payload.checked || 0),
+      created: Number(payload.created || 0),
+      errors
+    };
+  } catch (error) {
+    console.error("Erro ao sincronizar usuários:", error);
+    state.userSyncResult = {
+      ok: false,
+      message: error?.message || "Falha de conexão com a API de sincronização.",
+      errors: []
+    };
+  } finally {
+    state.userSyncBusy = false;
+    renderManagement();
   }
 };
 
@@ -4722,8 +4912,16 @@ elements.authForm.addEventListener("submit", async event => {
     // Primeira etapa: cria a conta no Firebase Authentication.
     credential = await createUserWithEmailAndPassword(auth, email, password);
 
-    // A partir daqui a conta JÁ EXISTE. Não deixamos mais o usuário preso
-    // no formulário caso alguma etapa secundária apresente erro.
+    // Segunda etapa: cria users/{uid} e aguarda a gravação no Firestore.
+    // Nenhuma outra etapa do cadastro deve avançar antes desta confirmação.
+    await ensureUserDocument(
+      credential.user,
+      name,
+      registrationRole
+    );
+
+    // Authentication e Firestore já estão sincronizados. A partir daqui,
+    // o restante do fluxo pode atualizar o estado e carregar o perfil.
     state.authUser = credential.user;
     state.currentUser = buildPendingProfileFromAuth(
       credential.user,
@@ -4738,41 +4936,13 @@ elements.authForm.addEventListener("submit", async event => {
       console.warn("Não foi possível sincronizar o nome no Auth:", profileNameError);
     }
 
-    // Envia a confirmação antes de depender do Firestore.
+    // O documento users/{uid} já existe antes do envio da confirmação.
     let verificationSent = false;
     try {
       await sendEmailVerification(credential.user);
       verificationSent = true;
     } catch (verificationError) {
       console.error("Não foi possível enviar a confirmação:", verificationError);
-    }
-
-    // Tenta preparar o perfil no Firestore, mas um erro aqui não desfaz
-    // nem esconde a conta que já foi criada no Authentication.
-    try {
-      await setDoc(doc(db, "users", credential.user.uid), {
-        name,
-        email,
-        baseRole: registrationRole,
-        role: registrationRole,
-        isActive: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-    } catch (firestoreProfileError) {
-      console.error("Conta criada, mas o perfil no Firestore será tentado novamente:", firestoreProfileError);
-
-      setTimeout(async () => {
-        try {
-          await ensureUserDocument(
-            credential.user,
-            name,
-            registrationRole
-          );
-        } catch (retryError) {
-          console.warn("Nova tentativa de sincronização do perfil:", retryError);
-        }
-      }, 1500);
     }
 
     state.registrationInProgress = false;
@@ -4807,11 +4977,9 @@ elements.authForm.addEventListener("submit", async event => {
     // não ocorreu nesta tentativa.
     setAuthMessage(mapFirebaseError(error), "error");
   } finally {
-    if (!credential) {
-      state.registrationInProgress = false;
-      state.pendingRegistrationName = "";
-      state.pendingRegistrationRole = "";
-    }
+    state.registrationInProgress = false;
+    state.pendingRegistrationName = "";
+    state.pendingRegistrationRole = "";
     elements.authSubmitButton.disabled = false;
   }
 });
@@ -4836,12 +5004,9 @@ if (LOCAL_MODE) {
     startPublicContentListeners();
 
     onAuthStateChanged(auth, async firebaseUser => {
-      stopListener("user");
-      stopPrivateListeners();
+      clearAuthenticatedUserState();
+      const authSessionVersion = state.authSessionVersion;
       state.authUser = firebaseUser;
-      state.authClaims = {};
-      state.currentUser = null;
-      state.lastAccessSignature = "";
 
       if (!firebaseUser) {
         updateAccessState();
@@ -4850,16 +5015,9 @@ if (LOCAL_MODE) {
       }
 
       // Durante um cadastro recém-iniciado, o formulário ainda está
-      // sincronizando nome e perfil. Não criamos outro documento aqui.
+      // criando users/{uid}. O fluxo de cadastro fará a atualização do estado
+      // somente depois que a gravação no Firestore terminar.
       if (state.registrationInProgress) {
-        state.currentUser = buildPendingProfileFromAuth(
-          firebaseUser,
-          state.pendingRegistrationRole,
-          state.pendingRegistrationName
-        );
-        updateAccessState();
-        renderAll();
-        setView("profile");
         return;
       }
 
@@ -4869,22 +5027,46 @@ if (LOCAL_MODE) {
         // Atualiza o estado do Authentication, principalmente emailVerified.
         await reload(firebaseUser);
         await getIdToken(firebaseUser, true);
+        const authClaims = await loadAuthClaims(firebaseUser, false, false);
+
+        if (
+          state.authSessionVersion !== authSessionVersion ||
+          state.authUser?.uid !== firebaseUser.uid
+        ) return;
+
         state.authUser = firebaseUser;
-        await loadAuthClaims(firebaseUser, false);
+        state.authClaims = authClaims;
 
         // Primeiro lê o perfil real. Em contas já existentes isso evita qualquer
         // tentativa de escrita desnecessária antes de descobrir a função atual.
         const userRef = doc(db, "users", firebaseUser.uid);
         let userSnapshot = await getDoc(userRef);
 
-        // Somente cria o perfil se ele realmente ainda não existir.
+        // Contas antigas podem existir somente no Firebase Authentication.
+        // Primeiro tentamos criar users/{uid}; erro só será tratado se essa
+        // recuperação automática também falhar.
         if (!userSnapshot.exists()) {
-          await ensureUserDocument(firebaseUser);
+          setFirebaseStatus("Criando perfil da conta...", "pending");
+
+          await ensureUserDocument(
+            firebaseUser,
+            firebaseUser.displayName || ""
+          );
+
           userSnapshot = await getDoc(userRef);
         }
 
+        if (
+          state.authSessionVersion !== authSessionVersion ||
+          state.authUser?.uid !== firebaseUser.uid
+        ) return;
+
         if (!userSnapshot.exists()) {
-          throw new Error("Perfil do usuário não encontrado no Firestore.");
+          const profileNotFoundError = new Error(
+            "Perfil do usuário não encontrado no Firestore."
+          );
+          profileNotFoundError.code = "profile/not-found";
+          throw profileNotFoundError;
         }
 
         state.currentUser = normalizeUserSnapshot(userSnapshot);
@@ -4933,6 +5115,11 @@ if (LOCAL_MODE) {
           }
         }
       } catch (error) {
+        if (
+          state.authSessionVersion !== authSessionVersion ||
+          state.authUser?.uid !== firebaseUser.uid
+        ) return;
+
         console.error("Erro ao preparar a conta autenticada:", error);
 
         // Mantém os dados básicos da sessão. Se a claim operator estiver ativa,
@@ -4957,7 +5144,7 @@ if (LOCAL_MODE) {
           renderAll();
           setView("profile");
           setFirebaseStatus(
-            "Não foi possível carregar completamente o perfil da conta.",
+            getProfileLoadErrorMessage(error),
             "error"
           );
         }
