@@ -5139,3 +5139,49 @@ if (LOCAL_MODE) {
     setFirebaseStatus("Configuração do Firebase inválida.", "error");
   }
 }
+
+// Registro do Service Worker - PWA TechLib
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js")
+      .then((registration) => {
+        console.log(
+          "Service Worker registrado:",
+          registration.scope
+        );
+      })
+      .catch((error) => {
+        console.error(
+          "Erro ao registrar Service Worker:",
+          error
+        );
+      });
+  });
+}
+
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredPrompt = event;
+
+  const installButton = document.getElementById("installAppButton");
+  if (installButton) {
+    installButton.classList.remove("hidden");
+  }
+});
+
+document.addEventListener("click", async (event) => {
+  if (event.target.id !== "installAppButton") {
+    return;
+  }
+
+  if (!deferredPrompt) {
+    return;
+  }
+
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  event.target.classList.add("hidden");
+});
