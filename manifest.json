@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "description": "TechLib - Plataforma de gestão da biblioteca escolar.",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "tech-lib.vercel",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "tech-lib.vercel",
+  "start_url": "/",
+  "theme_color": "#1558d6"
+}
