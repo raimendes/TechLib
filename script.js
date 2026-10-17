@@ -3730,11 +3730,15 @@ window.generateCollectionReport = function() {
     `;
   }).join("");
 
-  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
+  // Precisamos da referência da janela para escrever o relatório.
+  // A opção noopener faz window.open retornar null mesmo quando a abertura funciona.
+  const reportWindow = window.open("", "_blank");
   if (!reportWindow) {
     alert("O navegador bloqueou a abertura do relatório. Permita pop-ups para o TechLib e tente novamente.");
     return;
   }
+
+  reportWindow.opener = null;
 
   const reportHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
