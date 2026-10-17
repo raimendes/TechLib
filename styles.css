@@ -1119,6 +1119,20 @@
       min-height: 55px;
     }
 
+    #bookManagementResults {
+      max-height: 360px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
+      overscroll-behavior-y: contain;
+    }
+
+    #bookManagementResults > .permission-user > div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .permission-user {
       display: grid;
       grid-template-columns: 1fr auto;
