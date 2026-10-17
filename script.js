@@ -1362,6 +1362,112 @@ function reservationStatusLabel(status) {
   return labels[status] || status;
 }
 
+function loanDateMillis(value) {
+  if (!value) return NaN;
+  return typeof value.toMillis === "function" ? value.toMillis() :
+    new Date(typeof value.toDate === "function" ? value.toDate() : value).getTime();
+}
+
+function getLoanCountdown(loan, now = Date.now()) {
+  if (loan?.status !== "active") return null;
+  const start = loanDateMillis(loan.startDate);
+  const due = loanDateMillis(loan.dueDate);
+  if (!Number.isFinite(start) || !Number.isFinite(due) || due <= start) return null;
+  const remaining = due - now;
+  const minutes = Math.ceil(Math.abs(remaining) / 60000);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const duration = `${days}d ${hours}h ${minutes % 60}min`;
+  const stage = remaining <= 0 ? "overdue" : remaining <= 86400000 ? "today" : remaining <= 172800000 ? "soon" : "active";
+  return {
+    due, stage,
+    text: remaining <= 0 ? `Prazo vencido há ${duration}` : `Faltam ${duration} para devolver`,
+    progress: Math.max(0, Math.min(100, ((now - start) / (due - start)) * 100))
+  };
+}
+
+function renderLoanCountdown(loan) {
+  const timer = getLoanCountdown(loan);
+  if (!timer) return "";
+  return `<div class="loan-countdown ${timer.stage}">
+    <strong>${timer.text}</strong>
+    <progress max="100" value="${timer.progress}" aria-label="Tempo decorrido do empréstimo"></progress>
+    <span>Devolução: ${formatDateTime(loan.dueDate)}</span>
+  </div>`;
+}
+
+function renderLoanNotificationControl() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return "";
+  if (Notification.permission === "granted") return '<small>Notificações do navegador permitidas. Os avisos são verificados enquanto o app está aberto.</small>';
+  if (Notification.permission === "denied") return '<small>Notificações bloqueadas no navegador. Os avisos continuam aparecendo aqui.</small>';
+  return '<button class="secondary-button" onclick="enableLoanNotifications()">Ativar notificações neste dispositivo</button><small>Os avisos são verificados enquanto o site ou app está aberto.</small>';
+}
+
+// Não grava dados do aluno: apenas identifica avisos já exibidos neste dispositivo.
+const shownLoanNotifications = new Set();
+let loanNotificationBusy = false;
+
+async function notifyLoanDeadline(loan, timer) {
+  if (loanNotificationBusy || !("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
+  const uid = state.currentUser?.uid;
+  if (!uid || loan.studentUid !== uid) return;
+  const key = `techlib-loan-notice:${uid}:${loan.id}:${timer.due}:${timer.stage}`;
+  if (shownLoanNotifications.has(key)) return;
+  try { if (localStorage.getItem(key)) return; } catch { /* Armazenamento opcional. */ }
+  loanNotificationBusy = true;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration?.active || state.currentUser?.uid !== uid) return;
+    const current = state.loans.find(item => item.id === loan.id && item.studentUid === uid);
+    const latestTimer = getLoanCountdown(current);
+    if (!latestTimer || latestTimer.due !== timer.due || latestTimer.stage !== timer.stage) return;
+    const title = timer.stage === "overdue" ? "Devolução em atraso" : timer.stage === "active" ? "Empréstimo confirmado" : "Lembrete de devolução";
+    await registration.showNotification(`TechLib • ${title}`, {
+      body: `${timer.text}. Consulte seus empréstimos no TechLib.`,
+      icon: "/assets/icon-192.png",
+      tag: `techlib-loan-${uid}-${loan.id}`
+    });
+    shownLoanNotifications.add(key);
+    try { localStorage.setItem(key, "1"); } catch { /* Mantém a deduplicação em memória. */ }
+  } catch (error) {
+    console.warn("Não foi possível exibir o aviso do empréstimo:", error);
+  } finally {
+    loanNotificationBusy = false;
+  }
+}
+
+window.enableLoanNotifications = async function() {
+  if (!state.currentUser || !isStudentUser() || !("Notification" in window)) return;
+  try {
+    await Notification.requestPermission();
+    updateLoanReminders();
+  } catch (error) {
+    console.warn("Não foi possível ativar notificações:", error);
+    alert("Não foi possível ativar as notificações neste navegador. O contador continua disponível no app.");
+  }
+};
+
+function updateLoanReminders() {
+  const loan = state.currentUser && isActiveUser() && isStudentUser()
+    ? getUserLoans().find(item => item.status === "active") : null;
+  const timer = getLoanCountdown(loan);
+  const banner = document.getElementById("loanReminder");
+  if (banner) {
+    banner.classList.toggle("hidden", !timer);
+    const html = timer ? `<strong>${timer.stage === "overdue" ? "Seu empréstimo está atrasado" : "Seu empréstimo está ativo"}</strong>
+      ${renderLoanCountdown(loan)}
+      <button class="secondary-button" onclick="setView('loans')">Ver meu empréstimo</button>
+      ${renderLoanNotificationControl()}` : "";
+    if (banner.innerHTML !== html) banner.innerHTML = html;
+  }
+  document.querySelectorAll("[data-loan-countdown]").forEach(element => {
+    const record = state.loans.find(item => item.id === element.dataset.loanCountdown);
+    const html = state.currentUser && record?.studentUid === state.currentUser.uid ? renderLoanCountdown(record) : "";
+    if (element.innerHTML !== html) element.innerHTML = html;
+  });
+  if (timer) void notifyLoanDeadline(loan, timer);
+}
+
 function renderStudentLoans() {
   const records = getUserLoans();
   const openLoan = records.find(item => ["pending", "active"].includes(item.status));
@@ -1399,6 +1505,7 @@ function renderStudentLoans() {
         <h3>${escapeHtml(book?.title || "Livro")}</h3>
         <p>Empréstimo confirmado em ${formatDate(openLoan.startDate)}.</p>
         <p>Devolução prevista para ${formatDate(openLoan.dueDate)}.</p>
+        <div data-loan-countdown="${escapeHtml(openLoan.id)}">${renderLoanCountdown(openLoan)}</div>
         <span class="loan-status">
           ${openLoan.renewed ? "Empréstimo renovado" : "Empréstimo ativo"}
         </span>
@@ -2835,6 +2942,7 @@ function renderAll() {
   renderTavola();
   renderProfile();
   renderManagement();
+  updateLoanReminders();
 }
 
 function setView(viewName) {
@@ -5276,10 +5384,17 @@ if (LOCAL_MODE) {
 }
 
 // Registro do Service Worker - PWA TechLib
+setInterval(updateLoanReminders, 30000);
+window.addEventListener("focus", updateLoanReminders);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) updateLoanReminders();
+});
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js")
       .then((registration) => {
+        updateLoanReminders();
         console.log(
           "Service Worker registrado:",
           registration.scope
