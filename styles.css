@@ -690,6 +690,42 @@
       padding: 16px;
     }
 
+    .loan-reminder {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .loan-reminder.hidden { display: none; }
+    .loan-reminder small { line-height: 1.5; }
+
+    .loan-countdown {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      border-left: 4px solid #2563eb;
+      background: rgba(37, 99, 235, 0.08);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .loan-countdown.soon, .loan-countdown.today {
+      border-color: #d97706;
+      background: rgba(217, 119, 6, 0.12);
+    }
+
+    .loan-countdown.overdue {
+      border-color: #dc2626;
+      background: rgba(220, 38, 38, 0.12);
+    }
+
+    .loan-countdown progress { width: 100%; accent-color: #2563eb; }
+    .loan-countdown.soon progress, .loan-countdown.today progress { accent-color: #d97706; }
+    .loan-countdown.overdue progress { accent-color: #dc2626; }
+
     .loan-card h3 {
       margin: 0 0 5px;
       font-size: 1rem;
