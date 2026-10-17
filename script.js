@@ -154,6 +154,8 @@ const state = {
   bookImportRows: [],
   bookImportFileName: "",
   bookImportBusy: false,
+  selectedBookIds: new Set(),
+  bookRemovalBusy: false,
   bookImportMessage: "",
   userSyncBusy: false,
   userSyncResult: null,
@@ -298,7 +300,7 @@ function renderSelectOptions(options, selected) {
 
 function normalizeBookSnapshot(snapshot) {
   const data = snapshot.data();
-  const parsedQuantity = Number(data.quantity);
+  const parsedQuantity = getBookQuantity(data);
   return {
     id: snapshot.id,
     title: String(data.title || "").trim(),
@@ -491,9 +493,15 @@ function displayBookField(value) {
   return text || "Não informado";
 }
 
+function getBookQuantity(book) {
+  const value = book?.quantity;
+  if (value === null || value === undefined || String(value).trim() === "") return 1;
+  return Number(value);
+}
+
 function formatBookQuantity(book) {
-  return Number.isInteger(book?.quantity) && book.quantity >= 1
-    ? `${book.quantity} exemplar(es)`
+  return Number.isInteger(getBookQuantity(book)) && getBookQuantity(book) >= 1
+    ? `${getBookQuantity(book)} exemplar(es)`
     : "Quantidade não informada";
 }
 
@@ -550,7 +558,7 @@ function getSpreadsheetValue(row, aliases) {
 
 function parseImportedQuantity(value) {
   const raw = String(value ?? "").trim();
-  if (!raw) return null;
+  if (!raw) return 1;
 
   const cleaned = raw
     .replace(/\s+/g, "")
@@ -647,11 +655,11 @@ function getAvailableCopies(book) {
   if (
     !book ||
     book.condition === "Inutilizável" ||
-    !Number.isInteger(book.quantity) ||
-    book.quantity < 1
+    !Number.isInteger(getBookQuantity(book)) ||
+    getBookQuantity(book) < 1
   ) return 0;
 
-  return Math.max(0, book.quantity - book.loanedCount - book.reservedCount);
+  return Math.max(0, getBookQuantity(book) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0));
 }
 
 function getUserLoans() {
@@ -777,6 +785,7 @@ function clearAuthenticatedUserState() {
   state.bookImportRows = [];
   state.bookImportFileName = "";
   state.bookImportBusy = false;
+  state.selectedBookIds.clear();
   state.bookImportMessage = "";
   state.userSyncBusy = false;
   state.userSyncResult = null;
@@ -1272,7 +1281,7 @@ function renderCatalog() {
     let buttonLabel = "Solicitar empréstimo";
     let buttonDisabled = false;
 
-    const quantityKnown = Number.isInteger(book.quantity) && book.quantity >= 1;
+    const quantityKnown = Number.isInteger(getBookQuantity(book)) && getBookQuantity(book) >= 1;
 
     if (unavailableByCondition) {
       buttonLabel = "Fora de circulação";
@@ -2211,7 +2220,7 @@ function renderBookImportSection() {
       <p>
         Aceita .xlsx, .xls e .csv. Na importação nenhum campo é obrigatório.
         São reconhecidas as colunas Nome do Livro, Autor, Gênero ou CDU e Quant. Disponível.
-        Campos vazios ficam como não informados para edição posterior.
+        Quantidade vazia será 1 exemplar. Os demais campos vazios ficam como não informados.
       </p>
       <p style="margin-top:6px;">
         Antes de importar, o TechLib verifica títulos já existentes e possíveis duplicatas.
@@ -2272,15 +2281,14 @@ function renderBookManagementCard() {
         </label>
 
         <label>
-          Quantidade ${isEditing ? "" : "*"}
+          Quantidade (padrão: 1)
           <input
             name="quantity"
             type="number"
             min="1"
             max="999"
-            ${isEditing ? "" : "required"}
-            value="${Number.isInteger(editingBook?.quantity) ? editingBook.quantity : ""}"
-            placeholder="Não informada"
+            value="${editingBook ? getBookQuantity(editingBook) : 1}"
+            placeholder="1"
           >
         </label>
 
@@ -2307,7 +2315,7 @@ function renderBookManagementCard() {
       <p class="book-form-note">
         ${isEditing
           ? "Registros importados podem ser completados gradualmente. Campos ainda desconhecidos podem permanecer sem informação."
-          : "No cadastro manual, Título, Autor, Gênero ou CDU e Quantidade são obrigatórios."}
+          : "No cadastro manual, Título, Autor e Gênero ou CDU são obrigatórios. Quantidade vazia será 1."}
       </p>
 
       <div class="book-form-actions">
@@ -2319,9 +2327,14 @@ function renderBookManagementCard() {
     </form>
   ` : "";
 
+  const selectedCount = state.books.filter(book => state.selectedBookIds.has(book.id) && !isBookRemovalBlocked(book)).length;
   const catalogItems = state.books.length ? state.books.map(book => `
     <div class="permission-user">
       <div>
+        <label><input type="checkbox" aria-label="Selecionar ${escapeHtml(displayBookField(book.title))}"
+          ${state.selectedBookIds.has(book.id) ? "checked" : ""}
+          ${state.bookRemovalBusy || isBookRemovalBlocked(book) ? "disabled" : ""}
+          onchange="toggleBookSelection('${book.id}', this.checked)"> Selecionar</label>
         <strong>${escapeHtml(displayBookField(book.title))}</strong>
         <span class="managed-book-meta">
           ${escapeHtml(displayBookField(book.author))} • ${escapeHtml(displayBookField(book.genre))}<br>
@@ -2346,6 +2359,12 @@ function renderBookManagementCard() {
       </div>
       ${renderBookImportSection()}
       ${form}
+      <div class="book-form-actions" style="margin-top:14px;">
+        <button class="secondary-button" onclick="selectAllBooksForRemoval()" ${state.bookRemovalBusy ? "disabled" : ""}>Selecionar todos removíveis</button>
+        <button class="secondary-button" onclick="clearBookSelection()" ${state.bookRemovalBusy ? "disabled" : ""}>Limpar seleção</button>
+        <button class="secondary-button" onclick="removeSelectedBooks()" ${!selectedCount || state.bookRemovalBusy ? "disabled" : ""}>${state.bookRemovalBusy ? "Removendo..." : `Remover selecionados (${selectedCount})`}</button>
+      </div>
+      <p>Livros com empréstimos, reservas ou solicitações pendentes não podem ser removidos.</p>
       <div class="permission-list" style="margin-top:14px;">${catalogItems}</div>
     </article>
   `;
@@ -3525,7 +3544,7 @@ window.confirmBookImport = async function() {
 
   const confirmed = confirm(
     `Importar ${accepted.length} registro(s) novo(s)? ` +
-    "Campos vazios permanecerão como não informados e as quantidades não serão somadas automaticamente."
+    "Quantidade vazia será 1 exemplar. Os demais campos vazios permanecerão como não informados; quantidades não serão somadas."
   );
   if (!confirmed) return;
 
@@ -3630,11 +3649,11 @@ window.generateCollectionReport = function() {
 
   const totalRecords = books.length;
   const booksWithKnownQuantity = books.filter(book =>
-    Number.isInteger(book.quantity) && book.quantity >= 1
+    Number.isInteger(getBookQuantity(book)) && getBookQuantity(book) >= 1
   );
   const unknownQuantityCount = totalRecords - booksWithKnownQuantity.length;
   const totalCopies = booksWithKnownQuantity.reduce(
-    (sum, book) => sum + book.quantity,
+    (sum, book) => sum + getBookQuantity(book),
     0
   );
   const totalLoaned = books.reduce(
@@ -3659,8 +3678,8 @@ window.generateCollectionReport = function() {
   const generatedRole = getEffectiveRole() || state.currentUser?.role || "Usuário autorizado";
 
   const rows = books.map((book, index) => {
-    const quantityKnown = Number.isInteger(book.quantity) && book.quantity >= 1;
-    const quantity = quantityKnown ? String(book.quantity) : "Não informada";
+    const quantityKnown = Number.isInteger(getBookQuantity(book)) && getBookQuantity(book) >= 1;
+    const quantity = quantityKnown ? String(getBookQuantity(book)) : "Não informada";
     const available = quantityKnown ? String(getAvailableCopies(book)) : "—";
     const loaned = Math.max(0, Number(book.loanedCount) || 0);
     const reserved = Math.max(0, Number(book.reservedCount) || 0);
@@ -3818,7 +3837,7 @@ window.generateCollectionReport = function() {
   </section>
 
   <p class="note">
-    Os totais de exemplares e de disponibilidade consideram apenas registros com quantidade cadastrada.
+    Livros sem quantidade cadastrada são considerados como 1 exemplar.
   </p>
 
   <table>
@@ -3840,7 +3859,7 @@ window.generateCollectionReport = function() {
   </table>
 
   <div class="footer">
-    Relatório gerado pelo TechLib. Registros com quantidade não informada permanecem no acervo, mas não entram no total de exemplares disponíveis.
+    Relatório gerado pelo TechLib. Livros sem quantidade cadastrada são considerados como 1 exemplar.
   </div>
 </body>
 </html>`;
@@ -3866,14 +3885,14 @@ window.saveBook = async function(event) {
   const author = String(data.get("author") || "").trim();
   const genre = String(data.get("genre") || "").trim();
   const rawQuantity = String(data.get("quantity") ?? "").trim();
-  const quantity = rawQuantity ? Number(rawQuantity) : null;
+  const quantity = rawQuantity ? Number(rawQuantity) : 1;
   const condition = String(data.get("condition") || "Não informado");
   const damage = String(data.get("damage") || "Não informado");
   const cover = sanitizeCoverUrl(data.get("cover"));
   const editing = Boolean(state.editingBookId);
 
-  if (!editing && (!title || !author || !genre || !rawQuantity)) {
-    return alert("No cadastro manual, preencha Título, Autor, Gênero ou CDU e Quantidade.");
+  if (!editing && (!title || !author || !genre)) {
+    return alert("No cadastro manual, preencha Título, Autor e Gênero ou CDU.");
   }
 
   if (rawQuantity && (!Number.isInteger(quantity) || quantity < 1 || quantity > 999)) {
@@ -3953,6 +3972,83 @@ window.saveBook = async function(event) {
   }
 };
 
+function isBookRemovalBlocked(book) {
+  return Number(book.loanedCount || 0) > 0 || Number(book.reservedCount || 0) > 0 ||
+    getBookPendingLoans(book.id).length > 0 || getBookPendingReservations(book.id).length > 0;
+}
+
+window.toggleBookSelection = function(bookId, selected) {
+  if (!ensureOperatorAccess() || state.bookRemovalBusy) return;
+  const book = state.books.find(item => item.id === bookId);
+  if (selected && book && !isBookRemovalBlocked(book)) state.selectedBookIds.add(bookId);
+  else state.selectedBookIds.delete(bookId);
+  renderManagement();
+};
+
+window.selectAllBooksForRemoval = function() {
+  if (!ensureOperatorAccess() || state.bookRemovalBusy) return;
+  state.selectedBookIds = new Set(state.books.filter(book => !isBookRemovalBlocked(book)).map(book => book.id));
+  renderManagement();
+};
+
+window.clearBookSelection = function() {
+  if (state.bookRemovalBusy) return;
+  state.selectedBookIds.clear();
+  renderManagement();
+};
+
+window.removeSelectedBooks = async function() {
+  if (!ensureOperatorAccess() || state.bookRemovalBusy) return;
+  if (!LOCAL_MODE && !ensureFirebaseReady()) return;
+  const books = state.books.filter(book => state.selectedBookIds.has(book.id));
+  if (!books.length) return;
+  if (books.some(isBookRemovalBlocked)) {
+    alert("A seleção contém livros com empréstimo, reserva ou solicitação pendente. Atualize a seleção.");
+    return;
+  }
+  if (!confirm(`Remover permanentemente ${books.length} livro(s) selecionado(s) do acervo? Esta ação não pode ser desfeita.`)) return;
+  state.bookRemovalBusy = true;
+  renderManagement();
+  let removed = 0;
+  try {
+    // Lotes menores mantêm todas as leituras antes das exclusões na transação.
+    for (let start = 0; start < books.length; start += 100) {
+      if (!ensureOperatorAccess()) throw new Error("Acesso à remoção indisponível.");
+      const chunk = books.slice(start, start + 100);
+      if (chunk.some(isBookRemovalBlocked)) throw new Error("Um livro selecionado passou a ter empréstimo, reserva ou solicitação pendente.");
+      if (LOCAL_MODE) {
+        const ids = new Set(chunk.map(book => book.id));
+        const previous = state.books;
+        state.books = state.books.filter(book => !ids.has(book.id));
+        try { persistLocalData(); } catch (error) { state.books = previous; throw error; }
+      } else {
+        await runTransaction(db, async transaction => {
+          const refs = chunk.map(book => doc(db, "books", book.id));
+          const snapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
+          snapshots.forEach((snapshot, index) => {
+            if (!snapshot.exists()) return;
+            if (isBookRemovalBlocked({ ...snapshot.data(), id: chunk[index].id })) {
+              throw new Error("Um livro selecionado possui empréstimo, reserva ou solicitação pendente.");
+            }
+          });
+          snapshots.forEach((snapshot, index) => {
+            if (snapshot.exists()) transaction.delete(refs[index]);
+          });
+        });
+      }
+      chunk.forEach(book => state.selectedBookIds.delete(book.id));
+      removed += chunk.length;
+    }
+    alert(`${removed} livro(s) removido(s) do acervo.`);
+  } catch (error) {
+    console.error(error);
+    alert(`${removed} livro(s) removido(s). A remoção foi interrompida: ${mapFirebaseError(error)}`);
+  } finally {
+    state.bookRemovalBusy = false;
+    renderAll();
+  }
+};
+
 window.removeBook = async function(bookId) {
   if (LOCAL_MODE) {
     if (!ensureOperatorAccess()) return;
@@ -4024,7 +4120,7 @@ window.requestLoan = async function(bookId) {
       if (!bookSnapshot.exists()) throw new Error("Livro não encontrado.");
 
       const book = bookSnapshot.data();
-      const available = Number(book.quantity) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
+      const available = getBookQuantity(book) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
       if (book.condition === "Inutilizável" || available < 1) {
         throw new Error("Este livro não está disponível.");
       }
@@ -4111,7 +4207,7 @@ window.confirmLoan = async function(loanId) {
       if (!bookSnapshot.exists()) throw new Error("Livro não encontrado.");
 
       const book = bookSnapshot.data();
-      const available = Number(book.quantity) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
+      const available = getBookQuantity(book) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
       if (book.condition === "Inutilizável" || available < 1) {
         throw new Error("Não há exemplar disponível para confirmar.");
       }
@@ -4366,7 +4462,7 @@ window.confirmReservation = async function(reservationId) {
       const bookSnapshot = await transaction.get(bookRef);
       if (!bookSnapshot.exists()) throw new Error("Livro não encontrado.");
       const book = bookSnapshot.data();
-      const available = Number(book.quantity) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
+      const available = getBookQuantity(book) - Number(book.loanedCount || 0) - Number(book.reservedCount || 0);
       if (book.condition === "Inutilizável" || available < Number(reservation.quantity)) {
         throw new Error("Não há exemplares suficientes para confirmar a reserva.");
       }
