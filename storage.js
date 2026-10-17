@@ -217,14 +217,14 @@ function localSaveBook(event) {
   const author = String(data.get("author") || "").trim();
   const genre = String(data.get("genre") || "").trim();
   const rawQuantity = String(data.get("quantity") ?? "").trim();
-  const quantity = rawQuantity ? Number(rawQuantity) : null;
+  const quantity = rawQuantity ? Number(rawQuantity) : 1;
   const condition = String(data.get("condition") || "Não informado");
   const damage = String(data.get("damage") || "Não informado");
   const cover = sanitizeCoverUrl(data.get("cover"));
   const editing = Boolean(state.editingBookId);
 
-  if (!editing && (!title || !author || !genre || !rawQuantity)) {
-    return alert("No cadastro manual, preencha Título, Autor, Gênero ou CDU e Quantidade.");
+  if (!editing && (!title || !author || !genre)) {
+    return alert("No cadastro manual, preencha Título, Autor e Gênero ou CDU.");
   }
 
   if (rawQuantity && (!Number.isInteger(quantity) || quantity < 1 || quantity > 999)) {
