@@ -564,6 +564,9 @@ function localToggleUserActiveStatus(uid, activate) {
 }
   return {
     loadLocalData,
+    localId,
+    localTimestamp,
+    refreshLocalState,
     localCancelLoanRequest,
     localCancelReservation,
     localChangeStaffRole,
