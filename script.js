@@ -150,6 +150,7 @@ const state = {
   editingEventId: null,
   tavolaFormOpen: false,
   editingTavolaId: null,
+  bookManagementSearch: "",
   studentPermissionSearch: "",
   bookImportRows: [],
   bookImportFileName: "",
@@ -794,6 +795,7 @@ function clearAuthenticatedUserState() {
   state.editingEventId = null;
   state.tavolaFormOpen = false;
   state.editingTavolaId = null;
+  state.bookManagementSearch = "";
   state.studentPermissionSearch = "";
 
   state.currentView = "home";
@@ -2241,6 +2243,44 @@ function renderBookImportSection() {
   `;
 }
 
+function getFilteredManagedBooks() {
+  const term = normalize(state.bookManagementSearch.trim());
+  return state.books.filter(book => [book.title, book.author, book.genre].some(value => normalize(value).includes(term)));
+}
+
+function renderManagedBookItems() {
+  const books = getFilteredManagedBooks();
+  const catalogItems = books.length ? books.map(book => `
+    <div class="permission-user">
+      <div>
+        <label><input type="checkbox" aria-label="Selecionar ${escapeHtml(displayBookField(book.title))}"
+          ${state.selectedBookIds.has(book.id) ? "checked" : ""}
+          ${state.bookRemovalBusy || isBookRemovalBlocked(book) ? "disabled" : ""}
+          onchange="toggleBookSelection('${book.id}', this.checked)"> Selecionar</label>
+        <strong>${escapeHtml(displayBookField(book.title))}</strong>
+        <span class="managed-book-meta">
+          ${escapeHtml(displayBookField(book.author))} • ${escapeHtml(displayBookField(book.genre))}<br>
+          ${escapeHtml(formatBookQuantity(book))} • ${book.loanedCount} emprestado(s) • ${book.reservedCount} reservado(s)<br>
+          Estado: ${escapeHtml(displayBookField(book.condition))} • Avaria: ${escapeHtml(displayBookField(book.damage))}
+        </span>
+      </div>
+      <div class="managed-book-actions">
+        <button class="small-button" onclick="openBookForm('${book.id}')">Editar</button>
+        <button class="small-button" onclick="removeBook('${book.id}')">Remover</button>
+      </div>
+    </div>
+  `).join("") : '<div class="empty-state">Nenhum livro encontrado.</div>';
+  return catalogItems;
+}
+
+window.updateBookManagementSearch = function(value) {
+  state.bookManagementSearch = String(value || "");
+  const list = document.getElementById("bookManagementResults");
+  const summary = document.getElementById("bookManagementSummary");
+  if (list) { list.innerHTML = renderManagedBookItems(); list.scrollTop = 0; }
+  if (summary) summary.textContent = `${getFilteredManagedBooks().length} / ${state.books.length}`;
+};
+
 function renderBookManagementCard() {
   const editingBook = state.books.find(book => book.id === state.editingBookId) || null;
   const selectedCondition = editingBook?.condition || "Não informado";
@@ -2328,26 +2368,7 @@ function renderBookManagementCard() {
   ` : "";
 
   const selectedCount = state.books.filter(book => state.selectedBookIds.has(book.id) && !isBookRemovalBlocked(book)).length;
-  const catalogItems = state.books.length ? state.books.map(book => `
-    <div class="permission-user">
-      <div>
-        <label><input type="checkbox" aria-label="Selecionar ${escapeHtml(displayBookField(book.title))}"
-          ${state.selectedBookIds.has(book.id) ? "checked" : ""}
-          ${state.bookRemovalBusy || isBookRemovalBlocked(book) ? "disabled" : ""}
-          onchange="toggleBookSelection('${book.id}', this.checked)"> Selecionar</label>
-        <strong>${escapeHtml(displayBookField(book.title))}</strong>
-        <span class="managed-book-meta">
-          ${escapeHtml(displayBookField(book.author))} • ${escapeHtml(displayBookField(book.genre))}<br>
-          ${escapeHtml(formatBookQuantity(book))} • ${book.loanedCount} emprestado(s) • ${book.reservedCount} reservado(s)<br>
-          Estado: ${escapeHtml(displayBookField(book.condition))} • Avaria: ${escapeHtml(displayBookField(book.damage))}
-        </span>
-      </div>
-      <div class="managed-book-actions">
-        <button class="small-button" onclick="openBookForm('${book.id}')">Editar</button>
-        <button class="small-button" onclick="removeBook('${book.id}')">Remover</button>
-      </div>
-    </div>
-  `).join("") : '<div class="empty-state">Nenhum livro cadastrado.</div>';
+  const catalogItems = renderManagedBookItems();
 
   return `
     <article class="management-card">
@@ -2359,13 +2380,22 @@ function renderBookManagementCard() {
       </div>
       ${renderBookImportSection()}
       ${form}
+      <div class="permission-search">
+        <label for="bookManagementSearch">Pesquisar livros</label>
+        <input id="bookManagementSearch" type="search" autocomplete="off"
+          placeholder="Título, autor, gênero ou CDU"
+          value="${escapeHtml(state.bookManagementSearch)}"
+          oninput="updateBookManagementSearch(this.value)">
+        <p class="permission-search-help">Pesquise e role a lista para encontrar os livros. A seleção é mantida ao pesquisar.</p>
+        <p class="permission-result-summary" id="bookManagementSummary" aria-live="polite">${getFilteredManagedBooks().length} / ${state.books.length}</p>
+      </div>
       <div class="book-form-actions" style="margin-top:14px;">
-        <button class="secondary-button" onclick="selectAllBooksForRemoval()" ${state.bookRemovalBusy ? "disabled" : ""}>Selecionar todos removíveis</button>
+        <button class="secondary-button" onclick="selectAllBooksForRemoval()" ${state.bookRemovalBusy ? "disabled" : ""}>Selecionar removíveis da pesquisa</button>
         <button class="secondary-button" onclick="clearBookSelection()" ${state.bookRemovalBusy ? "disabled" : ""}>Limpar seleção</button>
         <button class="secondary-button" onclick="removeSelectedBooks()" ${!selectedCount || state.bookRemovalBusy ? "disabled" : ""}>${state.bookRemovalBusy ? "Removendo..." : `Remover selecionados (${selectedCount})`}</button>
       </div>
       <p>Livros com empréstimos, reservas ou solicitações pendentes não podem ser removidos.</p>
-      <div class="permission-list" style="margin-top:14px;">${catalogItems}</div>
+      <div class="permission-list" id="bookManagementResults" tabindex="0" role="region" aria-label="Livros do acervo">${catalogItems}</div>
     </article>
   `;
 }
@@ -3979,15 +4009,18 @@ function isBookRemovalBlocked(book) {
 
 window.toggleBookSelection = function(bookId, selected) {
   if (!ensureOperatorAccess() || state.bookRemovalBusy) return;
+  const scrollTop = document.getElementById("bookManagementResults")?.scrollTop || 0;
   const book = state.books.find(item => item.id === bookId);
   if (selected && book && !isBookRemovalBlocked(book)) state.selectedBookIds.add(bookId);
   else state.selectedBookIds.delete(bookId);
   renderManagement();
+  const list = document.getElementById("bookManagementResults");
+  if (list) list.scrollTop = scrollTop;
 };
 
 window.selectAllBooksForRemoval = function() {
   if (!ensureOperatorAccess() || state.bookRemovalBusy) return;
-  state.selectedBookIds = new Set(state.books.filter(book => !isBookRemovalBlocked(book)).map(book => book.id));
+  state.selectedBookIds = new Set(getFilteredManagedBooks().filter(book => !isBookRemovalBlocked(book)).map(book => book.id));
   renderManagement();
 };
 
