@@ -518,7 +518,7 @@ function findBookDuplicate(candidate, books = state.books, ignoreId = null) {
     const exact = titleMatches.find(book =>
       normalizeDuplicateValue(book.author) === author
     );
-    if (exact) return { type: "exact", book };
+    if (exact) return { type: "exact", book: exact };
 
     const missingAuthor = titleMatches.find(book =>
       !normalizeDuplicateValue(book.author)
@@ -695,6 +695,9 @@ function ensureFirebaseReady() {
 
 const {
   loadLocalData,
+  localId,
+  localTimestamp,
+  refreshLocalState,
   localCancelLoanRequest,
   localCancelReservation,
   localChangeStaffRole,
@@ -3531,9 +3534,8 @@ window.confirmBookImport = async function() {
   renderManagement();
 
   try {
-    const now = localTimestamp();
-
     if (LOCAL_MODE) {
+      const now = localTimestamp();
       accepted.forEach(row => {
         state.books.push({
           id: localId("book"),
